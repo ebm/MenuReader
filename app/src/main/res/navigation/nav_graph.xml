@@ -3,26 +3,47 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/FirstFragment">
+    app:startDestination="@id/menulist_fragment">
 
     <fragment
-        android:id="@+id/FirstFragment"
-        android:name="com.example.menureader.FirstFragment"
-        android:label="@string/first_fragment_label"
-        tools:layout="@layout/fragment_first" >
+        android:id="@+id/camera_fragment"
+        android:name="com.example.menureader.CameraFragment"
+        android:label="Camera"
+        tools:layout="@layout/camera_fragment" >
 
         <action
-            android:id="@+id/action_FirstFragment_to_SecondFragment"
-            app:destination="@id/SecondFragment" />
+            android:id="@+id/action_camera_to_results"
+            app:destination="@id/results_fragment" />
+        <action
+                android:id="@+id/action_camera_to_menulist"
+                app:destination="@id/menulist_fragment" />
     </fragment>
+
     <fragment
-        android:id="@+id/SecondFragment"
-        android:name="com.example.menureader.SecondFragment"
-        android:label="@string/second_fragment_label"
-        tools:layout="@layout/fragment_second" >
+            android:id="@+id/results_fragment"
+            android:name="com.example.menureader.ResultsFragment"
+            android:label="Results"
+            tools:layout="@layout/results_fragment" >
 
         <action
-            android:id="@+id/action_SecondFragment_to_FirstFragment"
-            app:destination="@id/FirstFragment" />
+                android:id="@+id/action_results_to_camera"
+                app:destination="@id/camera_fragment" />
+        <action
+                android:id="@+id/action_results_to_menulist"
+                app:destination="@id/menulist_fragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/menulist_fragment"
+        android:name="com.example.menureader.MenuListFragment"
+        android:label="MenuList"
+        tools:layout="@layout/menulist_fragment" >
+
+        <action
+            android:id="@+id/action_menulist_to_results"
+            app:destination="@id/results_fragment" />
+        <action
+                android:id="@+id/action_menulist_to_camera"
+                app:destination="@id/camera_fragment" />
     </fragment>
 </navigation>
