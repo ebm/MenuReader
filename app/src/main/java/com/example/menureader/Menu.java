@@ -16,14 +16,19 @@ public class Menu {
     private List<MenuCategory> categories;
     private Bitmap imageBitmap;
 
-    public Menu(Bitmap imageBitmap) {
+    public interface OnMenuReadyListener {
+        void onMenuReady(Menu menu);
+        void onMenuFailed(Exception e);
+    }
+
+    public Menu(Bitmap imageBitmap, OnMenuReadyListener listener) {
         LogHandler.m("Menu", "Menu initializer called");
         this.imageBitmap = imageBitmap;
         this.categories = new ArrayList<>();
         InputImage image = InputImage.fromBitmap(imageBitmap, 0);
-        processImage(image);
+        processImage(image, listener);
     }
-    public void processImage(InputImage image) {
+    public void processImage(InputImage image, OnMenuReadyListener listener) {
         TextRecognizer rec = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
         rec.process(image).addOnSuccessListener(text -> {
@@ -42,8 +47,10 @@ public class Menu {
                 }
                 categories.add(new MenuCategory(categoryText, lines, categoryBoundingBox));
             }
+            listener.onMenuReady(this);
         }).addOnFailureListener(e -> {
             LogHandler.m("Menu OCR Handler", "Failed to process image", e);
+            listener.onMenuFailed(e);
         });
     }
 }
