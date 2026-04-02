@@ -1,16 +1,19 @@
 package com.example.menureader;
 
 import android.util.Log;
-import com.google.firebase.components.BuildConfig;
 
 public class LogHandler {
+    private static final boolean debug = true;
     public static void m(String message) {
-        if (BuildConfig.DEBUG) Log.d("Misc", message);
+        if (debug) Log.v("ebm", message);
     }
-    public static void m(String tag, String message) {
-        if (BuildConfig.DEBUG) Log.d(tag, message);
-    }
-    public static void m(String tag, String message, Throwable e) {
-        if (BuildConfig.DEBUG) Log.d(tag, message, e);
+    public static void m(String message, Throwable e) {
+        if (debug) {
+            if (e == null) {
+                Log.v("ebm", message);
+            } else {
+                Log.v("ebm", message, e);
+            }
+        }
     }
 }
