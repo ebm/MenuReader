@@ -62,6 +62,11 @@ public class OCRTest {
         long end = System.nanoTime() - start;
         assertNull("OCR failed with exception" + exception[0], exception[0]);
         LogHandler.m("testMenuRecognition passed. Initialization took " + ((double) end / 1_000_000_000) + " seconds.");
+
+        LogHandler.m("Menu:");
+        for (MenuLine ml : menu.getMenuList()) {
+            LogHandler.m("Line: " + ml.getText());
+        }
     }
 
 }

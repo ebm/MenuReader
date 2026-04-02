@@ -14,29 +14,27 @@ import java.util.List;
 public class Menu {
     private String text;
 
-    private List<MenuCategory> categories;
-    private Bitmap imageBitmap;
+    private List<MenuLine> menuList;
+    private final Bitmap imageBitmap;
 
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
+    public Bitmap getImageBitmap() {
+        return imageBitmap;
     }
 
     public interface OnMenuReadyListener {
         void onMenuReady(Menu menu);
+
         void onMenuFailed(Exception e);
     }
 
     public Menu(Bitmap imageBitmap, OnMenuReadyListener listener) {
         LogHandler.m("Menu initializer called");
         this.imageBitmap = imageBitmap;
-        this.categories = new ArrayList<>();
+        this.menuList = new ArrayList<>();
         InputImage image = InputImage.fromBitmap(imageBitmap, 0);
         processImage(image, listener);
     }
+
     public void processImage(InputImage image, OnMenuReadyListener listener) {
         TextRecognizer rec = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
@@ -46,15 +44,11 @@ public class Menu {
 
             // Gets all the categories on the menu
             for (Text.TextBlock block : text.getTextBlocks()) {
-                String categoryText = block.getText();
-                Rect categoryBoundingBox = block.getBoundingBox();
-                List<MenuLine> lines = new ArrayList<>();
                 // Gets all the menu items
                 for (Text.Line line : block.getLines()) {
                     MenuLine ml = new MenuLine(line.getText(), line.getBoundingBox());
-                    lines.add(ml);
+                    menuList.add(ml);
                 }
-                categories.add(new MenuCategory(categoryText, lines, categoryBoundingBox));
             }
             listener.onMenuReady(this);
         }).addOnFailureListener(e -> {
@@ -62,11 +56,10 @@ public class Menu {
             listener.onMenuFailed(e);
         });
     }
-    public List<MenuCategory> getCategories() {
-        return categories;
+    public String getText() {
+        return text;
     }
-
-    public void setCategories(List<MenuCategory> categories) {
-        this.categories = categories;
+    public List<MenuLine> getMenuList() {
+        return menuList;
     }
 }
