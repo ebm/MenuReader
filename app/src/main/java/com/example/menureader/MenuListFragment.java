@@ -36,13 +36,16 @@ public class MenuListFragment extends Fragment {
 
         SharedViewModel svm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
 
-        MenuListAdapter mla = new MenuListAdapter(svm.getMenuList());
+        MenuListAdapter mla = new MenuListAdapter(svm.getMenuList(), menu -> {
+            Bundle args = new Bundle();
+            args.putString("mode", "MenuList");
+            svm.setMenu(menu);
+            NavHostFragment.findNavController(this).navigate(R.id.action_menulist_to_results, args);
+        });
         rv.setAdapter(mla);
 
         FloatingActionButton fab = view.findViewById(R.id.fabCamera);
-        Bundle args = new Bundle();
-        args.putString("mode", "MenuList");
-        fab.setOnClickListener(v -> NavHostFragment.findNavController(this).navigate(R.id.action_menulist_to_camera, args));
+        fab.setOnClickListener(v -> NavHostFragment.findNavController(this).navigate(R.id.action_menulist_to_camera));
         return view;
     }
 }

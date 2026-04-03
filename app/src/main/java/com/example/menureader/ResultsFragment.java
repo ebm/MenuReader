@@ -20,7 +20,6 @@ public class ResultsFragment extends Fragment {
     private Menu menu;
     private SharedViewModel svm;
     private boolean saveButtonHit;
-    private boolean discard;
     @Override
     public View onCreateView(@NonNull @NotNull LayoutInflater inflater,
                              @Nullable @org.jetbrains.annotations.Nullable ViewGroup container,
@@ -60,13 +59,16 @@ public class ResultsFragment extends Fragment {
         Button retakePhotoButton = view.findViewById(R.id.retake_photo_button);
         retakePhotoButton.setOnClickListener(v -> {
             LogHandler.m("Photo button clicked with mode: " + mode);
-            if (mode.equals("Photo")) {
-                retakePhotoButton.setText("Retake Photo");
-            } else if (mode.equals("MenuList")) {
-                retakePhotoButton.setText("Photo");
-            }
             NavHostFragment.findNavController(this).navigate(R.id.action_results_to_camera);
         });
+
+        if (mode.equals("Photo")) {
+            retakePhotoButton.setText("Retake Photo");
+            discardButton.setText("Discard");
+        } else if (mode.equals("MenuList")) {
+            retakePhotoButton.setText("Photo");
+            discardButton.setText("Back");
+        }
     }
     private void handleResultMode(View view) {
         if (getArguments() == null) {
@@ -111,7 +113,7 @@ public class ResultsFragment extends Fragment {
         ImageView image = view.findViewById(R.id.menuImage);
         menu = null;
         if (svm.getMenu() == null) {
-            LogHandler.m("Menulist has not been populated");
+            LogHandler.m("Menu has not been populated");
             return;
         }
         initializeHyperlinks(image, svm.getMenu());

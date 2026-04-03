@@ -22,9 +22,14 @@ public class MenuListAdapter extends RecyclerView.Adapter<MenuListAdapter.ViewHo
             menuName = view.findViewById(R.id.menuName);
         }
     }
+    public interface OnMenuListClickListener {
+        void onMenuClick(Menu menu);
+    }
     private List<Menu> menus;
-    public MenuListAdapter(List<Menu> menus) {
+    private final OnMenuListClickListener clickListener;
+    public MenuListAdapter(List<Menu> menus, OnMenuListClickListener clickListener) {
         this.menus = menus;
+        this.clickListener = clickListener;
     }
     @Override
     public MenuListAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -38,6 +43,13 @@ public class MenuListAdapter extends RecyclerView.Adapter<MenuListAdapter.ViewHo
         Menu menu = menus.get(position);
         holder.menuName.setText("Menu " + (position + 1));
         holder.thumbnail.setImageBitmap(menu.getImageBitmap());
+
+        holder.itemView.setOnClickListener(v -> {
+            int index = holder.getAdapterPosition();
+            if (index != RecyclerView.NO_POSITION) {
+                clickListener.onMenuClick(menus.get(index));
+            }
+        });
     }
 
     @Override
