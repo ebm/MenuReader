@@ -123,7 +123,9 @@ public class CameraFragment extends Fragment {
             Bitmap bitmap = BitmapFactory.decodeStream(is);
             SharedViewModel svm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
             svm.setBitmap(bitmap);
-            NavHostFragment.findNavController(this).navigate(R.id.action_camera_to_results);
+            Bundle args = new Bundle();
+            args.putString("mode", "Photo");
+            NavHostFragment.findNavController(this).navigate(R.id.action_camera_to_results, args);
         } catch (Exception e) {
             LogHandler.m("Failed to load test image", e);
         }

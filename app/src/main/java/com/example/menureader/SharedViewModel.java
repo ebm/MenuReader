@@ -8,6 +8,7 @@ import java.util.List;
 
 public class SharedViewModel extends ViewModel {
     private Bitmap bitmap;
+    private Menu menu;
     private final List<Menu> menuList;
 
     public SharedViewModel() {
@@ -29,4 +30,11 @@ public class SharedViewModel extends ViewModel {
         return menuList;
     }
 
+    public Menu getMenu() {
+        return menu;
+    }
+
+    public void setMenu(Menu menu) {
+        this.menu = menu;
+    }
 }

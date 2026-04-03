@@ -40,7 +40,9 @@ public class MenuListFragment extends Fragment {
         rv.setAdapter(mla);
 
         FloatingActionButton fab = view.findViewById(R.id.fabCamera);
-        fab.setOnClickListener(v -> NavHostFragment.findNavController(this).navigate(R.id.action_menulist_to_camera));
+        Bundle args = new Bundle();
+        args.putString("mode", "MenuList");
+        fab.setOnClickListener(v -> NavHostFragment.findNavController(this).navigate(R.id.action_menulist_to_camera, args));
         return view;
     }
 }

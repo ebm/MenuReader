@@ -30,37 +30,93 @@ public class ResultsFragment extends Fragment {
 
         svm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
 
-        //applyOffset(view);
+        handleResultMode(view);
 
-        initializeMenu(view);
-
+        return view;
+    }
+    private void handleButtons(String mode, View view) {
         saveButtonHit = false;
-
         Button saveAndExitButton = view.findViewById(R.id.back_button);
         saveAndExitButton.setOnClickListener(v -> {
-            LogHandler.m("Save and Exit Button Clicked!");
-            if (menu != null) {
-                svm.addMenu(menu);
+            LogHandler.m("Save button clicked with mode: " + mode);
+            if (mode.equals("Photo")) {
+                if (menu != null) {
+                    svm.addMenu(menu);
+                    NavHostFragment.findNavController(this).navigate(R.id.action_results_to_menulist);
+                } else {
+                    saveButtonHit = true;
+                }
+            } else if (mode.equals("MenuList")) {
                 NavHostFragment.findNavController(this).navigate(R.id.action_results_to_menulist);
-            } else {
-                saveButtonHit = true;
             }
         });
 
         Button discardButton = view.findViewById(R.id.discard_menu_button);
         discardButton.setOnClickListener(v -> {
-            LogHandler.m("Discard Menu Button Clicked!");
+            LogHandler.m("Discard button clicked with mode: " + mode);
             NavHostFragment.findNavController(this).navigate(R.id.action_results_to_menulist);
         });
 
         Button retakePhotoButton = view.findViewById(R.id.retake_photo_button);
         retakePhotoButton.setOnClickListener(v -> {
-            LogHandler.m("Retake Photo Button Clicked!");
+            LogHandler.m("Photo button clicked with mode: " + mode);
+            if (mode.equals("Photo")) {
+                retakePhotoButton.setText("Retake Photo");
+            } else if (mode.equals("MenuList")) {
+                retakePhotoButton.setText("Photo");
+            }
             NavHostFragment.findNavController(this).navigate(R.id.action_results_to_camera);
         });
-        return view;
+    }
+    private void handleResultMode(View view) {
+        if (getArguments() == null) {
+            LogHandler.m("Argument string is null. Should not be");
+            return;
+        }
+        String mode = getArguments().getString("mode");
+        if (mode.equals("Photo")) {
+            initializePhoto(view);
+        } else if (mode.equals("MenuList")){
+            initializeMenu(view);
+        } else {
+            LogHandler.m("Mode set to something not handled");
+            return;
+        }
+        handleButtons(mode, view);
+    }
+    private void initializeHyperlinks(ImageView image, Menu menu) {
+        Bitmap bm = menu.getImageBitmap().copy(Bitmap.Config.ARGB_8888, true);
+        Canvas canvas = new Canvas(bm);
+        Paint paint = new Paint();
+        paint.setColor(Color.RED);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(3f);
+
+        for (MenuLine ml : menu.getMenuList()) {
+            Rect bounds = ml.getLineBounds();
+            if (bounds != null) {
+                canvas.drawRect(bounds, paint);
+            } else {
+                LogHandler.m("bounds is null for input: " + ml.getText());
+            }
+        }
+        image.setImageBitmap(bm);
+        image.setOnTouchListener((v, event) -> {
+            imageOnTouchListener(v, event, menu, image);
+            return true;
+        });
+        this.menu = menu;
     }
     private void initializeMenu(View view) {
+        ImageView image = view.findViewById(R.id.menuImage);
+        menu = null;
+        if (svm.getMenu() == null) {
+            LogHandler.m("Menulist has not been populated");
+            return;
+        }
+        initializeHyperlinks(image, svm.getMenu());
+    }
+    private void initializePhoto(View view) {
         ImageView image = view.findViewById(R.id.menuImage);
         menu = null;
         new Menu(svm.getBitmap(), new Menu.OnMenuReadyListener() {
@@ -75,27 +131,7 @@ public class ResultsFragment extends Fragment {
                     svm.addMenu(menu);
                     NavHostFragment.findNavController(ResultsFragment.this).navigate(R.id.action_results_to_menulist);
                 }
-                Bitmap bm = menu.getImageBitmap().copy(Bitmap.Config.ARGB_8888, true);
-                Canvas canvas = new Canvas(bm);
-                Paint paint = new Paint();
-                paint.setColor(Color.RED);
-                paint.setStyle(Paint.Style.STROKE);
-                paint.setStrokeWidth(3f);
-
-                for (MenuLine ml : menu.getMenuList()) {
-                    Rect bounds = ml.getLineBounds();
-                    if (bounds != null) {
-                        canvas.drawRect(bounds, paint);
-                    } else {
-                        LogHandler.m("bounds is null for input: " + ml.getText());
-                    }
-                }
-                image.setImageBitmap(bm);
-                image.setOnTouchListener((v, event) -> {
-                    imageOnTouchListener(v, event, menu, image);
-                    return true;
-                });
-                ResultsFragment.this.menu = menu;
+                initializeHyperlinks(image, menu);
             }
 
             @Override
@@ -135,13 +171,4 @@ public class ResultsFragment extends Fragment {
         inverse.mapPoints(point);
         return point;
     }
-//    private void applyOffset(View v) {
-//        ViewCompat.setOnApplyWindowInsetsListener(v.findViewById(R.id.back_button), (view, insets) -> {
-//            int navBarHeight = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
-//            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
-//            params.bottomMargin = navBarHeight - 50;  // nav bar height + your desired padding
-//            view.setLayoutParams(params);
-//            return insets;
-//        });
-//    }
 }
