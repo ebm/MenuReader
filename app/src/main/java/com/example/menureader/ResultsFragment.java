@@ -11,29 +11,53 @@ import android.widget.Button;
 import android.widget.ImageView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import org.jetbrains.annotations.NotNull;
 
 public class ResultsFragment extends Fragment {
+    private Menu menu;
+    private SharedViewModel svm;
     @Override
     public View onCreateView(@NonNull @NotNull LayoutInflater inflater,
                              @Nullable @org.jetbrains.annotations.Nullable ViewGroup container,
                              @Nullable @org.jetbrains.annotations.Nullable Bundle savedInstanceState) {
         LogHandler.m("View set to Results");
         View view = inflater.inflate(R.layout.results_fragment, container, false);
+
         //applyOffset(view);
 
+        initializeMenu(view);
+
+        Button saveAndExitButton = view.findViewById(R.id.back_button);
+        saveAndExitButton.setOnClickListener(v -> {
+            LogHandler.m("Save and Exit Button Clicked!");
+            svm.setMenu(menu);
+            NavHostFragment.findNavController(this).navigate(R.id.action_results_to_menulist);
+        });
+
+        Button discardButton = view.findViewById(R.id.discard_menu_button);
+        discardButton.setOnClickListener(v -> {
+            LogHandler.m("Discard Menu Button Clicked!");
+            NavHostFragment.findNavController(this).navigate(R.id.action_results_to_menulist);
+        });
+
+        Button retakePhotoButton = view.findViewById(R.id.retake_photo_button);
+        retakePhotoButton.setOnClickListener(v -> {
+            LogHandler.m("Retake Photo Button Clicked!");
+            NavHostFragment.findNavController(this).navigate(R.id.action_results_to_camera);
+        });
+        return view;
+    }
+    private void initializeMenu(View view) {
         ImageView image = view.findViewById(R.id.menuImage);
-        SharedViewModel svm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+        svm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+        menu = null;
         new Menu(svm.getBitmap(), new Menu.OnMenuReadyListener() {
             @Override
             public void onMenuReady(Menu menu) {
-                LogHandler.m("Menu received from camera: " + menu.getText());
+                LogHandler.m("Menu received from camera: "/* + menu.getText()*/);
                 Bitmap bm = menu.getImageBitmap().copy(Bitmap.Config.ARGB_8888, true);
                 Canvas canvas = new Canvas(bm);
                 Paint paint = new Paint();
@@ -54,6 +78,7 @@ public class ResultsFragment extends Fragment {
                     imageOnTouchListener(v, event, menu, image);
                     return true;
                 });
+                ResultsFragment.this.menu = menu;
             }
 
             @Override
@@ -61,14 +86,8 @@ public class ResultsFragment extends Fragment {
                 LogHandler.m("Camera: Menu failed", e);
             }
         });
-
-        Button backButton = view.findViewById(R.id.back_button);
-        backButton.setOnClickListener(v -> {
-            NavHostFragment.findNavController(this).navigate(R.id.action_results_to_menulist);
-        });
-        return view;
     }
-    public void imageOnTouchListener(View v, MotionEvent event, Menu menu, ImageView image) {
+    private void imageOnTouchListener(View v, MotionEvent event, Menu menu, ImageView image) {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             LogHandler.m("Touch Down");
             float tapX = event.getX();

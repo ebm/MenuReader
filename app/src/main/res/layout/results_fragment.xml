@@ -15,11 +15,31 @@
 
     <Button
             android:id="@+id/back_button"
-            android:text="Back"
+            android:text="Save and Exit"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginBottom="24dp" />
+
+    <Button
+            android:id="@+id/discard_menu_button"
+            android:text="Discard Menu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/back_button"
+            android:layout_marginBottom="24dp" />
+
+    <Button
+            android:id="@+id/retake_photo_button"
+            android:text="Retake Photo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/back_button"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginBottom="24dp" />
 
