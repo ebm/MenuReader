@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 public class ResultsFragment extends Fragment {
     private Menu menu;
     private SharedViewModel svm;
+    private boolean saveButtonHit;
     @Override
     public View onCreateView(@NonNull @NotNull LayoutInflater inflater,
                              @Nullable @org.jetbrains.annotations.Nullable ViewGroup container,
@@ -32,11 +33,17 @@ public class ResultsFragment extends Fragment {
 
         initializeMenu(view);
 
+        saveButtonHit = false;
+
         Button saveAndExitButton = view.findViewById(R.id.back_button);
         saveAndExitButton.setOnClickListener(v -> {
             LogHandler.m("Save and Exit Button Clicked!");
-            svm.addMenu(menu);
-            NavHostFragment.findNavController(this).navigate(R.id.action_results_to_menulist);
+            if (menu != null) {
+                svm.addMenu(menu);
+                NavHostFragment.findNavController(this).navigate(R.id.action_results_to_menulist);
+            } else {
+                saveButtonHit = true;
+            }
         });
 
         Button discardButton = view.findViewById(R.id.discard_menu_button);
@@ -80,6 +87,11 @@ public class ResultsFragment extends Fragment {
                     return true;
                 });
                 ResultsFragment.this.menu = menu;
+
+                if (saveButtonHit) {
+                    svm.addMenu(menu);
+                    NavHostFragment.findNavController(ResultsFragment.this).navigate(R.id.action_results_to_menulist);
+                }
             }
 
             @Override
