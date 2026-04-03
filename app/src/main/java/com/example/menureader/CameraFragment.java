@@ -23,6 +23,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -124,19 +125,10 @@ public class CameraFragment extends Fragment {
                         Bitmap bitmap = imageProxyToBitmap(imageProxy);
                         imageProxy.close();  // MUST close or camera freezes
 
-                        // Now pass bitmap to your Menu class
-                        new Menu(bitmap, new Menu.OnMenuReadyListener() {
-                            @Override
-                            public void onMenuReady(Menu menu) {
-                                LogHandler.m("Camera callback results are ready");
-                                NavHostFragment.findNavController(CameraFragment.this).navigate(R.id.action_camera_to_results);
-                            }
+                        SharedViewModel svm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+                        svm.setBitmap(bitmap);
 
-                            @Override
-                            public void onMenuFailed(Exception e) {
-                                LogHandler.m("Camera: Menu failed", e);
-                            }
-                        });
+                        NavHostFragment.findNavController(CameraFragment.this).navigate(R.id.action_camera_to_results);
                     }
 
                     @Override
