@@ -20,6 +20,7 @@ public class ResultsFragment extends Fragment {
     private Menu menu;
     private SharedViewModel svm;
     private boolean saveButtonHit;
+    private boolean discard;
     @Override
     public View onCreateView(@NonNull @NotNull LayoutInflater inflater,
                              @Nullable @org.jetbrains.annotations.Nullable ViewGroup container,
@@ -66,6 +67,14 @@ public class ResultsFragment extends Fragment {
             @Override
             public void onMenuReady(Menu menu) {
                 LogHandler.m("Menu received from camera: "/* + menu.getText()*/);
+                if (!isAdded()) {
+                    LogHandler.m("Menu is ready but results_fragment was destroyed. Returning early");
+                    return;
+                }
+                if (saveButtonHit) {
+                    svm.addMenu(menu);
+                    NavHostFragment.findNavController(ResultsFragment.this).navigate(R.id.action_results_to_menulist);
+                }
                 Bitmap bm = menu.getImageBitmap().copy(Bitmap.Config.ARGB_8888, true);
                 Canvas canvas = new Canvas(bm);
                 Paint paint = new Paint();
@@ -87,11 +96,6 @@ public class ResultsFragment extends Fragment {
                     return true;
                 });
                 ResultsFragment.this.menu = menu;
-
-                if (saveButtonHit) {
-                    svm.addMenu(menu);
-                    NavHostFragment.findNavController(ResultsFragment.this).navigate(R.id.action_results_to_menulist);
-                }
             }
 
             @Override
