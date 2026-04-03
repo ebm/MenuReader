@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -29,6 +30,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -116,26 +118,34 @@ public class CameraFragment extends Fragment {
     private void takePhoto() {
         LogHandler.m("Image capture attempted");
         if (imageCapture == null) return;
-
-        imageCapture.takePicture(ContextCompat.getMainExecutor(requireContext()),
-                new ImageCapture.OnImageCapturedCallback() {
-                    @Override
-                    public void onCaptureSuccess(@NonNull ImageProxy imageProxy) {
-                        // Convert ImageProxy to Bitmap
-                        Bitmap bitmap = imageProxyToBitmap(imageProxy);
-                        imageProxy.close();  // MUST close or camera freezes
-
-                        SharedViewModel svm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-                        svm.setBitmap(bitmap);
-
-                        NavHostFragment.findNavController(CameraFragment.this).navigate(R.id.action_camera_to_results);
-                    }
-
-                    @Override
-                    public void onError(@NonNull ImageCaptureException e) {
-                        LogHandler.m("Camera: Photo capture failed", e);
-                    }
-                });
+        try {
+            InputStream is = requireContext().getAssets().open("McDonalds_Menu.jpg");
+            Bitmap bitmap = BitmapFactory.decodeStream(is);
+            SharedViewModel svm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+            svm.setBitmap(bitmap);
+            NavHostFragment.findNavController(this).navigate(R.id.action_camera_to_results);
+        } catch (Exception e) {
+            LogHandler.m("Failed to load test image", e);
+        }
+//        imageCapture.takePicture(ContextCompat.getMainExecutor(requireContext()),
+//                new ImageCapture.OnImageCapturedCallback() {
+//                    @Override
+//                    public void onCaptureSuccess(@NonNull ImageProxy imageProxy) {
+//                        // Convert ImageProxy to Bitmap
+//                        Bitmap bitmap = imageProxyToBitmap(imageProxy);
+//                        imageProxy.close();  // MUST close or camera freezes
+//
+//                        SharedViewModel svm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+//                        svm.setBitmap(bitmap);
+//
+//                        NavHostFragment.findNavController(CameraFragment.this).navigate(R.id.action_camera_to_results);
+//                    }
+//
+//                    @Override
+//                    public void onError(@NonNull ImageCaptureException e) {
+//                        LogHandler.m("Camera: Photo capture failed", e);
+//                    }
+//                });
     }
 
     private Bitmap imageProxyToBitmap(ImageProxy image) {
@@ -143,7 +153,15 @@ public class CameraFragment extends Fragment {
         ByteBuffer buffer = plane.getBuffer();
         byte[] bytes = new byte[buffer.remaining()];
         buffer.get(bytes);
-        return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+
+        int rotation = image.getImageInfo().getRotationDegrees();
+        if (rotation != 0) {
+            Matrix matrix = new Matrix();
+            matrix.postRotate(rotation);
+            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        }
+        return bitmap;
     }
 
     @Override
