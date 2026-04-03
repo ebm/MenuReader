@@ -26,6 +26,8 @@ public class ResultsFragment extends Fragment {
         LogHandler.m("View set to Results");
         View view = inflater.inflate(R.layout.results_fragment, container, false);
 
+        svm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+
         //applyOffset(view);
 
         initializeMenu(view);
@@ -33,7 +35,7 @@ public class ResultsFragment extends Fragment {
         Button saveAndExitButton = view.findViewById(R.id.back_button);
         saveAndExitButton.setOnClickListener(v -> {
             LogHandler.m("Save and Exit Button Clicked!");
-            svm.setMenu(menu);
+            svm.addMenu(menu);
             NavHostFragment.findNavController(this).navigate(R.id.action_results_to_menulist);
         });
 
@@ -52,7 +54,6 @@ public class ResultsFragment extends Fragment {
     }
     private void initializeMenu(View view) {
         ImageView image = view.findViewById(R.id.menuImage);
-        svm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         menu = null;
         new Menu(svm.getBitmap(), new Menu.OnMenuReadyListener() {
             @Override
