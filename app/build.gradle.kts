@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
 }
@@ -14,6 +16,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(localPropertiesFile.inputStream())
+        }
+        buildConfigField("String", "UNSPLASH_KEY",
+            "\"${localProperties.getProperty("UNSPLASH_KEY", "")}\"")
     }
 
     buildTypes {
@@ -28,6 +38,8 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
+
     }
     sourceSets {
         getByName("androidTest") {
