@@ -35,6 +35,12 @@ public class Menu {
         processImage(image, listener);
     }
 
+    /**
+     * Processes an image with OCR
+     *
+     * @param image
+     * @param listener
+     */
     public void processImage(InputImage image, OnMenuReadyListener listener) {
         TextRecognizer rec = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
