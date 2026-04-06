@@ -1,5 +1,6 @@
 package com.example.menureader;
 
+import android.app.Dialog;
 import android.graphics.*;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -142,6 +143,27 @@ public class ResultsFragment extends Fragment {
             }
         });
     }
+    private void searchImage(String text) {
+        ImageDeliver.searchFood(text, requireActivity(), new ImageDeliver.OnImageResultListener() {
+            @Override
+            public void onImageSuccess(Bitmap bitmap) {
+                Dialog dialog = new Dialog(requireContext());
+
+                ImageView imageView = new ImageView(requireContext());
+                imageView.setImageBitmap(bitmap);
+                imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+
+                dialog.setContentView(imageView);
+                dialog.setTitle(text);
+                dialog.show();
+            }
+
+            @Override
+            public void onImageError(Exception e) {
+                LogHandler.m("Error loading image", e);
+            }
+        });
+    }
     private void imageOnTouchListener(View v, MotionEvent event, Menu menu, ImageView image) {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             LogHandler.m("Touch Down");
@@ -155,6 +177,7 @@ public class ResultsFragment extends Fragment {
                 Rect bounds = ml.getLineBounds();
                 if (bounds != null && bounds.contains((int) imageCoords[0], (int) imageCoords[1])) {
                     LogHandler.m("Touched down on " + ml.getText());
+                    searchImage(ml.getText());
                     break;
                 }
             }
