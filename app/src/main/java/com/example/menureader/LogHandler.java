@@ -15,9 +15,9 @@ public class LogHandler {
             String methodName = frame.getMethodName();
             String shortName = className.substring(className.lastIndexOf('.') + 1);
             if (e == null) {
-                Log.v("ebm_" + shortName, message + " | " + methodName);
+                Log.v("ebm_" + shortName, message + "| " + methodName);
             } else {
-                Log.v("ebm_" + shortName, message + " | " + methodName, e);
+                Log.v("ebm_" + shortName, message + "| " + methodName, e);
             }
         }
     }
