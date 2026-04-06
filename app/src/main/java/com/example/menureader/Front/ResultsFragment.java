@@ -25,6 +25,20 @@ public class ResultsFragment extends Fragment {
     private Menu menu;
     private SharedViewModel svm;
     private boolean saveButtonHit;
+
+    /**
+     * Function gets called before fragment loads
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate
+     * any views in the fragment,
+     * @param container If non-null, this is the parent view that the fragment's
+     * UI should be attached to.  The fragment should not add the view itself,
+     * but this can be used to generate the LayoutParams of the view.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     * from a previous saved state as given here.
+     *
+     * @return
+     */
     @Override
     public View onCreateView(@NonNull @NotNull LayoutInflater inflater,
                              @Nullable @org.jetbrains.annotations.Nullable ViewGroup container,
@@ -38,6 +52,14 @@ public class ResultsFragment extends Fragment {
 
         return view;
     }
+
+    /**
+     * Buttons do different things based off mode. Function initializes buttons and their
+     * uses depending on the mode.
+     *
+     * @param mode String with the value "Photo" or "MenuList"
+     * @param view
+     */
     private void handleButtons(String mode, View view) {
         saveButtonHit = false;
         Button saveAndExitButton = view.findViewById(R.id.back_button);
@@ -75,12 +97,19 @@ public class ResultsFragment extends Fragment {
             discardButton.setText("Back");
         }
     }
+
+    /**
+     * Handles mode argument from initialization
+     *
+     * @param view
+     */
     private void handleResultMode(View view) {
         if (getArguments() == null) {
             LogHandler.m("Argument string is null. Should not be");
             return;
         }
         String mode = getArguments().getString("mode");
+        assert mode != null;
         if (mode.equals("Photo")) {
             initializePhoto(view);
         } else if (mode.equals("MenuList")){
@@ -91,6 +120,13 @@ public class ResultsFragment extends Fragment {
         }
         handleButtons(mode, view);
     }
+
+    /**
+     * Creates outlines for all text OCR captured
+     *
+     * @param image
+     * @param menu
+     */
     private void initializeHyperlinks(ImageView image, Menu menu) {
         Bitmap bm = menu.getImageBitmap().copy(Bitmap.Config.ARGB_8888, true);
         Canvas canvas = new Canvas(bm);
@@ -114,16 +150,26 @@ public class ResultsFragment extends Fragment {
         });
         this.menu = menu;
     }
+
+    /**
+     * Initializes menu. Mode should be "MenuList" at this point and svm.getMenu()
+     * should have a menu added to the shared variable.
+     * @param view
+     */
     private void initializeMenu(View view) {
+        assert(svm.getMenu() != null);
         ImageView image = view.findViewById(R.id.menuImage);
         menu = null;
-        if (svm.getMenu() == null) {
-            LogHandler.m("Menu has not been populated");
-            return;
-        }
         initializeHyperlinks(image, svm.getMenu());
     }
+
+    /**
+     * Initialize menu. Mode should be "Photo" at this point and svm.getBitmap()
+     * should not be null
+     * @param view
+     */
     private void initializePhoto(View view) {
+        assert(svm.getBitmap() != null);
         ImageView image = view.findViewById(R.id.menuImage);
         menu = null;
         new Menu(svm.getBitmap(), new Menu.OnMenuReadyListener() {
@@ -147,6 +193,11 @@ public class ResultsFragment extends Fragment {
             }
         });
     }
+
+    /**
+     * Searches an image given some string text. Puts a dialog with retrieved image(s)
+     * @param text query
+     */
     private void searchImage(String text) {
         ImageDeliver.searchFood(text, requireActivity(), new ImageDeliver.OnImageResultListener() {
             @Override
@@ -168,6 +219,16 @@ public class ResultsFragment extends Fragment {
             }
         });
     }
+
+    /**
+     * Handles a screen tap. If tap is in the bounds of a hyperlink, open the link.
+     * TODO: Remove rectangles. Do checks by coordinates. Would need to update how MenuLine is created
+     *
+     * @param v
+     * @param event
+     * @param menu
+     * @param image
+     */
     private void imageOnTouchListener(View v, MotionEvent event, Menu menu, ImageView image) {
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             LogHandler.m("Touch Down");
@@ -187,6 +248,15 @@ public class ResultsFragment extends Fragment {
             }
         }
     }
+
+    /**
+     * Image does not take up entire screen. Need Matrix calculations to convert coordinates of
+     * tap to coordinates on image.
+     * @param imageView
+     * @param tapX
+     * @param tapY
+     * @return
+     */
     private float[] getImageCoordinates(ImageView imageView, float tapX, float tapY) {
         Drawable drawable = imageView.getDrawable();
         if (drawable == null) return new float[]{0, 0};
