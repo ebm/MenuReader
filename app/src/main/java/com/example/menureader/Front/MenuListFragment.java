@@ -22,6 +22,19 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class MenuListFragment extends Fragment {
+    /**
+     * Function gets called before fragment loads
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate
+     * any views in the fragment,
+     * @param container If non-null, this is the parent view that the fragment's
+     * UI should be attached to.  The fragment should not add the view itself,
+     * but this can be used to generate the LayoutParams of the view.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     * from a previous saved state as given here.
+     *
+     * @return
+     */
     @Override
     public View onCreateView(@NonNull @NotNull LayoutInflater inflater,
                              @Nullable @org.jetbrains.annotations.Nullable ViewGroup container,
@@ -31,6 +44,7 @@ public class MenuListFragment extends Fragment {
 
         Controller.applyOffset(view);
 
+        // Recycler view initialization
         RecyclerView rv = view.findViewById(R.id.recyclerView);
         rv.setLayoutManager(new LinearLayoutManager(requireContext()));
         // Temporary initializer for menu list. TODO: Create saving functionality so menu list persists
@@ -50,6 +64,9 @@ public class MenuListFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Adapter for RecyclerView
+     */
     public static class MenuListAdapter extends RecyclerView.Adapter<MenuListAdapter.ViewHolder> {
         public static class ViewHolder extends RecyclerView.ViewHolder {
             ImageView thumbnail;
@@ -70,27 +87,52 @@ public class MenuListFragment extends Fragment {
             this.menus = menus;
             this.clickListener = clickListener;
         }
+
+        /**
+         * Gets called before list adapter is initialized
+         *
+         * @param parent The ViewGroup into which the new View will be added after it is bound to
+         *               an adapter position.
+         * @param viewType The view type of the new View.
+         *
+         * @return
+         */
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.item_menu, parent, false);
-            return new ViewHolder(view);
+            ViewHolder holder = new ViewHolder(view);
+
+            holder.itemView.setOnClickListener(v -> {
+                int index = holder.getAdapterPosition();
+                if (index != RecyclerView.NO_POSITION) {
+                    LogHandler.m("Menu " + (index + 1) + " clicked");
+                    clickListener.onMenuClick(menus.get(index));
+                }
+            });
+
+            return holder;
         }
 
+        /**
+         * Gets called each time RecyclerView scrolls to a new item or when adapter
+         * is notified of changes notifyDataSetChanged()
+         *
+         * @param holder The ViewHolder which should be updated to represent the contents of the
+         *        item at the given position in the data set.
+         * @param position The position of the item within the adapter's data set.
+         */
         @Override
         public void onBindViewHolder(ViewHolder holder, int position) {
             Menu menu = menus.get(position);
             holder.menuName.setText("Menu " + (position + 1));
             holder.thumbnail.setImageBitmap(menu.getImageBitmap());
+       }
 
-            holder.itemView.setOnClickListener(v -> {
-                int index = holder.getAdapterPosition();
-                if (index != RecyclerView.NO_POSITION) {
-                    clickListener.onMenuClick(menus.get(index));
-                }
-            });
-        }
-
+        /**
+         * Gets the total size of menu list
+         * @return
+         */
         @Override
         public int getItemCount() {
             return menus.size();
