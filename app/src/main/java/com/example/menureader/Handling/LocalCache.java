@@ -12,7 +12,7 @@ public class LocalCache {
         public Node next;
         public Node prev;
     }
-    private HashMap<String, Node> lru_cache;
+    private final HashMap<String, Node> lru_cache;
     private Node head; // represents eldest entry
     private Node tail; // represents newest entry
     private final int MAX_CAPACITY_BYTES = 10_000_000;
@@ -23,23 +23,28 @@ public class LocalCache {
         head = null;
         tail = null;
     }
-    public void put(String query, ImageObjectList val) {
-        assert(val != null);
-        while (val.size() + currSizeBytes >= MAX_CAPACITY_BYTES) {
+    public void sizeUpdatedFlag() {
+        while (currSizeBytes >= MAX_CAPACITY_BYTES) {
             if (tail == null) {
                 LogHandler.m("Max capacity bytes is too low");
                 return;
             }
-            Node n = lru_cache.get(query);
-            removeNode(lru_cache.get(query), true);
+            Node n = lru_cache.get(tail.query);
+            removeNode(n, true);
             currSizeBytes -= n.val.size();
         }
+    }
+    public void put(String query, ImageObjectList val) {
+        assert(val != null);
+
         Node n = new Node();
         n.query = query;
         n.val = val;
 
-        insertNodeAtTail(n, true);
         currSizeBytes += n.val.size();
+        sizeUpdatedFlag();
+
+        insertNodeAtTail(n, true);
     }
     public void remove(String query) {
         Node n = lru_cache.get(query);
@@ -87,5 +92,8 @@ public class LocalCache {
         insertNodeAtTail(n, false);
         return n.val;
     }
-
+    public void updateSize(int size) {
+        currSizeBytes += size;
+        sizeUpdatedFlag();
+    }
 }
