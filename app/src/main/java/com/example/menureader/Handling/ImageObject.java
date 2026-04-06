@@ -4,11 +4,9 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 
 public class ImageObject {
-
-
     public interface OnImageObjectSuccess {
-         public void onImageCreation(ImageObject imageObject);
-         public void onImageFailure(Exception e);
+         void onImageCreation(ImageObject imageObject);
+         void onImageFailure(Exception e);
     }
     private String imageURL;
     private Bitmap bitmap;
@@ -16,6 +14,15 @@ public class ImageObject {
         this.imageURL = imageURL;
         this.bitmap = bitmap;
     }
+
+    /**
+     * Creates an ImageObject given a string url of an image. Needs a listener to handle
+     * the callback when ImageObject has succeeded/failed
+     *
+     * @param imageURL
+     * @param activity
+     * @param listener
+     */
     public ImageObject(String imageURL, Activity activity, OnImageObjectSuccess listener) {
         ImageDeliver.getBitmapFromUrlThread(imageURL, activity, new ImageDeliver.OnImageResultListener() {
             @Override
