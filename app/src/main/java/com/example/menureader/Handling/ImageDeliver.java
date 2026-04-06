@@ -21,6 +21,14 @@ public class ImageDeliver {
         void onImageSuccess(Bitmap bitmap);
         void onImageError(Exception e);
     }
+
+    /**
+     * Creates a new thread and gets creates a bitmap from imageURL
+     *
+     * @param imageURL
+     * @param activity current activity
+     * @param listener
+     */
     public static void getBitmapFromUrlThread(String imageURL, Activity activity, OnImageResultListener listener) {
         new Thread(() -> {
             try {
@@ -37,6 +45,13 @@ public class ImageDeliver {
             }
         });
     }
+
+    /**
+     * Uses an existing thread to get a bitmap from imageURL
+     * @param imageURL
+     * @return a bitmap
+     * @throws Exception outer thread must handle exception
+     */
     public static Bitmap getBitmapFromUrlNoThread(String imageURL) throws Exception{
         URL url = new URL(imageURL);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -45,6 +60,13 @@ public class ImageDeliver {
         InputStream input = conn.getInputStream();
         return BitmapFactory.decodeStream(input);
     }
+
+    /**
+     * Searches for food a food image on an image server given a query
+     * @param food query
+     * @param activity activity to get UI thread
+     * @param listener
+     */
     public static void searchFood(String food, Activity activity, OnImageResultListener listener) {
         new Thread(() -> {
             try {
