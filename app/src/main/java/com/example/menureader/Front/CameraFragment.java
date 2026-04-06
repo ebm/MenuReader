@@ -46,9 +46,12 @@ public class CameraFragment extends Fragment {
      */
     public void launchCameraPermission() {
          registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+             LogHandler.m("Camera permission requested.");
              if (granted) {
+                 LogHandler.m("Camera permission granted.");
                  startCamera();
              } else {
+                 LogHandler.m("Camera permission denied.");
                  Toast.makeText(requireContext(), "Camera permission needed", Toast.LENGTH_SHORT).show();
              }
          }).launch(Manifest.permission.CAMERA);
