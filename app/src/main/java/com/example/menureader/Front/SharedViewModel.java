@@ -7,6 +7,9 @@ import com.example.menureader.Handling.Menu;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Facilitates sharing data between fragments
+ */
 public class SharedViewModel extends ViewModel {
     private Bitmap bitmap;
     private Menu menu;
