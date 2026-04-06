@@ -1,4 +1,4 @@
-package com.example.menureader;
+package com.example.menureader.Handling;
 
 import android.graphics.Rect;
 

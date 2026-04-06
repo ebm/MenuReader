@@ -1,4 +1,4 @@
-package com.example.menureader;
+package com.example.menureader.Front;
 
 import android.app.Dialog;
 import android.graphics.*;
@@ -15,6 +15,10 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
+import com.example.menureader.*;
+import com.example.menureader.Handling.ImageDeliver;
+import com.example.menureader.Handling.Menu;
+import com.example.menureader.Handling.MenuLine;
 import org.jetbrains.annotations.NotNull;
 
 public class ResultsFragment extends Fragment {

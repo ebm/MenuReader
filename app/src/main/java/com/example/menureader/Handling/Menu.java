@@ -1,7 +1,7 @@
-package com.example.menureader;
+package com.example.menureader.Handling;
 
 import android.graphics.Bitmap;
-import android.graphics.Rect;
+import com.example.menureader.LogHandler;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.Text;
 import com.google.mlkit.vision.text.TextRecognition;

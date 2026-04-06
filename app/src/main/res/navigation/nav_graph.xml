@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/camera_fragment"
-        android:name="com.example.menureader.CameraFragment"
+        android:name="com.example.menureader.Front.CameraFragment"
         android:label="Camera"
         tools:layout="@layout/camera_fragment" >
 
@@ -21,7 +21,7 @@
 
     <fragment
             android:id="@+id/results_fragment"
-            android:name="com.example.menureader.ResultsFragment"
+            android:name="com.example.menureader.Front.ResultsFragment"
             android:label="Results"
             tools:layout="@layout/results_fragment" >
 
@@ -35,7 +35,7 @@
 
     <fragment
         android:id="@+id/menulist_fragment"
-        android:name="com.example.menureader.MenuListFragment"
+        android:name="com.example.menureader.Front.MenuListFragment"
         android:label="MenuList"
         tools:layout="@layout/menulist_fragment" >
 

@@ -1,4 +1,4 @@
-package com.example.menureader;
+package com.example.menureader.Front;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -6,7 +6,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,13 +18,15 @@ import androidx.camera.core.*;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
+import com.example.menureader.Handling.Controller;
+import com.example.menureader.LogHandler;
+import com.example.menureader.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.jetbrains.annotations.NotNull;
@@ -40,52 +41,62 @@ public class CameraFragment extends Fragment {
     private ImageCapture imageCapture;
     private ExecutorService cameraExecutor;
 
-    private final ActivityResultLauncher<String> permissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-                if (granted) {
-                    startCamera();
-                } else {
-                    Toast.makeText(requireContext(), "Camera permission needed", Toast.LENGTH_SHORT).show();
-                }
-            });
+    /**
+     * Prompts user for camera permissions
+     */
+    public void launchCameraPermission() {
+         registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+             if (granted) {
+                 startCamera();
+             } else {
+                 Toast.makeText(requireContext(), "Camera permission needed", Toast.LENGTH_SHORT).show();
+             }
+         }).launch(Manifest.permission.CAMERA);
+    }
 
+    /**
+     * Function gets called before fragment loads
+     *
+     * @param inflater The LayoutInflater object that can be used to inflate
+     * any views in the fragment,
+     * @param container If non-null, this is the parent view that the fragment's
+     * UI should be attached to.  The fragment should not add the view itself,
+     * but this can be used to generate the LayoutParams of the view.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed
+     * from a previous saved state as given here.
+     *
+     * @return
+     */
     @Override
     public View onCreateView(@NonNull @NotNull LayoutInflater inflater,
                              @Nullable @org.jetbrains.annotations.Nullable ViewGroup container,
                              @Nullable @org.jetbrains.annotations.Nullable Bundle savedInstanceState) {
         LogHandler.m("View set to Camera");
-        View view = inflater.inflate(R.layout.camera_fragment, container, false);
+        View view = inflater.inflate(com.example.menureader.R.layout.camera_fragment, container, false);
 
-        previewView = view.findViewById(R.id.previewView);
+        previewView = view.findViewById(com.example.menureader.R.id.previewView);
         cameraExecutor = Executors.newSingleThreadExecutor();
 
-        applyOffset(view);
+        Controller.applyOffset(view);
 
         // Check permission, then start camera
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
             startCamera();
         } else {
-            permissionLauncher.launch(Manifest.permission.CAMERA);
+            launchCameraPermission();
         }
 
         // FAB triggers photo capture
-        FloatingActionButton fab = view.findViewById(R.id.fab);
+        FloatingActionButton fab = view.findViewById(com.example.menureader.R.id.fab);
         fab.setOnClickListener(v -> takePhoto());
 
         return view;
     }
 
-    private void applyOffset(View v) {
-        ViewCompat.setOnApplyWindowInsetsListener(v.findViewById(R.id.fab), (view, insets) -> {
-            int navBarHeight = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
-            CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) view.getLayoutParams();
-            params.bottomMargin = navBarHeight + 24;  // nav bar height + your desired padding
-            view.setLayoutParams(params);
-            return insets;
-        });
-    }
-
+    /**
+     * Starts the camera
+     */
     private void startCamera() {
         LogHandler.m("Camera started");
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture =
@@ -115,9 +126,13 @@ public class CameraFragment extends Fragment {
         }, ContextCompat.getMainExecutor(requireContext()));
     }
 
+    /**
+     * Takes photo
+     */
     private void takePhoto() {
         LogHandler.m("Image capture attempted");
         if (imageCapture == null) return;
+        // Fake camera capture
         try {
             InputStream is = requireContext().getAssets().open("McDonalds_Menu.jpg");
             Bitmap bitmap = BitmapFactory.decodeStream(is);
@@ -129,6 +144,7 @@ public class CameraFragment extends Fragment {
         } catch (Exception e) {
             LogHandler.m("Failed to load test image", e);
         }
+        // Real camera capture
 //        imageCapture.takePicture(ContextCompat.getMainExecutor(requireContext()),
 //                new ImageCapture.OnImageCapturedCallback() {
 //                    @Override
@@ -150,22 +166,10 @@ public class CameraFragment extends Fragment {
 //                });
     }
 
-    private Bitmap imageProxyToBitmap(ImageProxy image) {
-        ImageProxy.PlaneProxy plane = image.getPlanes()[0];
-        ByteBuffer buffer = plane.getBuffer();
-        byte[] bytes = new byte[buffer.remaining()];
-        buffer.get(bytes);
-        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
 
-        int rotation = image.getImageInfo().getRotationDegrees();
-        if (rotation != 0) {
-            Matrix matrix = new Matrix();
-            matrix.postRotate(rotation);
-            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-        }
-        return bitmap;
-    }
-
+    /**
+     * Shuts down camera and any other essentials when fragment destructor called
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

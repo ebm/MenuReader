@@ -1,7 +1,8 @@
-package com.example.menureader;
+package com.example.menureader.Front;
 
 import android.graphics.Bitmap;
 import androidx.lifecycle.ViewModel;
+import com.example.menureader.Handling.Menu;
 
 import java.util.ArrayList;
 import java.util.List;

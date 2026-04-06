@@ -6,12 +6,9 @@ import android.graphics.BitmapFactory;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
-import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.text.TextRecognition;
-import com.google.mlkit.vision.text.TextRecognizer;
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+import com.example.menureader.Handling.Menu;
+import com.example.menureader.Handling.MenuLine;
 import org.junit.Test;
-import org.junit.experimental.categories.Categories;
 import org.junit.runner.RunWith;
 
 import java.io.InputStream;
