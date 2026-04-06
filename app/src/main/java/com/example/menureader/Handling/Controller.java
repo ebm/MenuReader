@@ -5,6 +5,10 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 public class Controller {
+    /**
+     * Apply padding based off navigation menu and notification bar
+     * @param v
+     */
     public static void applyOffset(View v) {
         ViewCompat.setOnApplyWindowInsetsListener(v, (view, insets) -> {
             int statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
@@ -13,13 +17,6 @@ public class Controller {
             // Push content below status bar
             view.setPadding(0, statusBarHeight, 0, 0);
 
-            // Push FAB above nav bar
-//            View fab = view.findViewById(R.id.fabCamera);
-//            if (fab != null) {
-//                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) fab.getLayoutParams();
-//                params.bottomMargin = navBarHeight + 24;
-//                fab.setLayoutParams(params);
-//            }
             view.setPadding(0, statusBarHeight, 0, navBarHeight + 24);
 
             return insets;
