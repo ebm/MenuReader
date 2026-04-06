@@ -21,8 +21,24 @@ public class ImageDeliver {
         void onImageSuccess(Bitmap bitmap);
         void onImageError(Exception e);
     }
-    public static Bitmap getBitmapFromUrl(String imageUrl) throws Exception {
-        URL url = new URL(imageUrl);
+    public static void getBitmapFromUrlThread(String imageURL, Activity activity, OnImageResultListener listener) {
+        new Thread(() -> {
+            try {
+                URL url = new URL(imageURL);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setDoInput(true);
+                conn.connect();
+                InputStream input = conn.getInputStream();
+                Bitmap bitmap =  BitmapFactory.decodeStream(input);
+
+                activity.runOnUiThread(() -> listener.onImageSuccess(bitmap));
+            } catch (Exception e) {
+                activity.runOnUiThread(() -> listener.onImageError(e));
+            }
+        });
+    }
+    public static Bitmap getBitmapFromUrlNoThread(String imageURL) throws Exception{
+        URL url = new URL(imageURL);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setDoInput(true);
         conn.connect();
@@ -51,9 +67,8 @@ public class ImageDeliver {
                 if (res.length() > 0) {
                     String imageURL = res.getJSONObject(0).getJSONObject("urls").getString("small");
 
-                    LogHandler.m("Unsplash returned " + imageURL);
-                    Bitmap bitmap = getBitmapFromUrl(imageURL);
-                    activity.runOnUiThread(() -> listener.onImageSuccess(bitmap));
+                    Bitmap bitmap = getBitmapFromUrlNoThread(imageURL);
+                    activity.runOnUiThread((() -> listener.onImageSuccess(bitmap)));
                 } else {
                     activity.runOnUiThread(() -> listener.onImageError(new Exception("Error loading image.")));
                 }
