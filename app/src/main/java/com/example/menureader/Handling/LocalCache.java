@@ -15,13 +15,17 @@ public class LocalCache {
     private final HashMap<String, Node> lru_cache;
     private Node head; // represents eldest entry
     private Node tail; // represents newest entry
-    private final int MAX_CAPACITY_BYTES = 10_000_000;
+    private  int MAX_CAPACITY_BYTES = 10_000_000;
     private int currSizeBytes;
     public LocalCache() {
         currSizeBytes = 0;
         lru_cache = new HashMap<>();
         head = null;
         tail = null;
+    }
+    public LocalCache(int capacity) {
+        this();
+        MAX_CAPACITY_BYTES = capacity;
     }
     public void sizeUpdatedFlag() {
         while (currSizeBytes >= MAX_CAPACITY_BYTES) {
