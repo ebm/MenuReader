@@ -95,7 +95,9 @@ public class LocalCache {
     }
     public void updateSize(int size, String query) {
         currSizeBytes += size;
-        assert(lru_cache.get(query) != null);
+        if (lru_cache.get(query) == null) {
+            throw new IllegalArgumentException("LRU Cache not updated with ImageObjectList");
+        }
         removeNode(lru_cache.get(query), false);
         insertNodeAtTail(lru_cache.get(query), false);
 

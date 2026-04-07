@@ -16,11 +16,14 @@ public class ImageObjectListTest {
     private ImageObject[] ioArr;
     private LocalCache cache;
     private static final int SIZE_BYTES = 100;
+    private String query;
 
     @Before
     public void setUp() {
+        query = "placeholder";
         cache = new LocalCache();
-        iol = new ImageObjectList("placeholder", cache);
+        iol = new ImageObjectList(query, cache);
+        cache.put(query, iol);
         ioArr = TestUtils.createNewImageObjects(3, SIZE_BYTES);
     }
 
@@ -41,6 +44,11 @@ public class ImageObjectListTest {
         assertEquals(SIZE_BYTES, iol.sizeBytes());
         assertEquals(1, iol.size());
         assertTrue(iol.contains(ioArr[0]));
+    }
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddWithoutCacheUpdate() {
+        cache.remove(query);
+        iol.add(ioArr[0]);
     }
 
     @Test
