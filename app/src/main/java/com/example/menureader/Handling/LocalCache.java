@@ -1,5 +1,6 @@
 package com.example.menureader.Handling;
 
+import androidx.annotation.StringDef;
 import com.example.menureader.LogHandler;
 
 import java.util.HashMap;
@@ -99,5 +100,31 @@ public class LocalCache {
     public void updateSize(int size) {
         currSizeBytes += size;
         sizeUpdatedFlag();
+    }
+    public int getCurrSizeBytes() {
+        return currSizeBytes;
+    }
+    public int getIndexOfImageObject(String query) {
+        if (lru_cache.get(query) == null) return -1;
+        Node ptr = head;
+        int index = 0;
+        while (ptr != null) {
+            if (ptr.query.equals(query)) {
+                return index;
+            }
+            index++;
+            ptr = ptr.next;
+        }
+        throw new IllegalStateException("LRU Cache and linked list out of sync");
+    }
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("LRU Cache | Elements: " + lru_cache.size() + " | Bytes: " +
+                  currSizeBytes + " | Capacity in Bytes: " + MAX_CAPACITY_BYTES);
+        for (String s : lru_cache.keySet()) {
+            sb.append(s + "->" + lru_cache.get(s).val.size());
+        }
+        return sb.toString();
     }
 }

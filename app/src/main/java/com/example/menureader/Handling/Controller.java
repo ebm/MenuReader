@@ -5,6 +5,9 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 public class Controller {
+    // No easy way to get exact string lengths in Java. A Java string has 38 bytes of
+    // overhead. sizeOfHeaderForStringByes is set to 50 bytes for safety.
+    public static int lengthOfStringHeader = 50;
     /**
      * Apply padding based off navigation menu and notification bar
      * @param v
@@ -23,9 +26,6 @@ public class Controller {
         });
     }
     public static int getStringSize(String s) {
-        // No easy way to get exact string lengths in Java. A Java string has 38 bytes of
-        // overhead. sizeOfHeaderForStringByes is set to 50 bytes for safety.
-        int lengthOfStringHeader = 50;
         // Java uses UTF_16 so each character is 2 bytes.
         int stringBytes = s.length() * 2;
         return stringBytes + lengthOfStringHeader;
