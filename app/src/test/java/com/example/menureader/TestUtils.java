@@ -6,6 +6,8 @@ import com.example.menureader.Handling.ImageObject;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
+import java.util.Arrays;
+
 import static org.junit.Assert.assertEquals;
 
 public class TestUtils {
@@ -34,5 +36,36 @@ public class TestUtils {
     public static ImageObject createImageObject(int bytes) {
         assert(bytes > Controller.lengthOfStringHeader + 4);
         return new ImageObject(createString(bytes - 4), createBitmap(4));
+    }
+
+    /**
+     * Creates unique string object with id
+     * @param bytes
+     * @param id
+     * @return
+     */
+    public static ImageObject createImageObject(int bytes, String id) {
+        assert(bytes >= 4 + Controller.getStringSize(id));
+        int availableBytes = bytes - 4;
+        char[] def = createString(availableBytes).toCharArray();
+        for (int i = 0; i < id.length(); i++) {
+            def[i] = id.charAt(i);
+        }
+        return new ImageObject(new String(def), createBitmap(4));
+    }
+
+    /**
+     * Creates distinct ImageObjects. Must have sizeBytes big enough to store unique
+     * strings
+     * @param n
+     * @param sizeBytes
+     * @return
+     */
+    public static ImageObject[] createNewImageObjects(int n, int sizeBytes) {
+        ImageObject[] ioArr = new ImageObject[n];
+        for (int i = 0; i < n; i++) {
+            ioArr[i] = TestUtils.createImageObject(sizeBytes, String.valueOf(i));
+        }
+        return ioArr;
     }
 }

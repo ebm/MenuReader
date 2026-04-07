@@ -18,6 +18,6 @@ public class ImageObjectTest {
         Bitmap b = TestUtils.createBitmap(4);
         assertEquals(bytes, Controller.getStringSize(s) + b.getByteCount());
         ImageObject io = new ImageObject(s, b);
-        assertEquals(bytes, io.getSize());
+        assertEquals(bytes, io.getSizeBytes());
     }
 }

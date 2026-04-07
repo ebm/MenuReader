@@ -1,6 +1,5 @@
 package com.example.menureader.Handling;
 
-import androidx.annotation.StringDef;
 import com.example.menureader.LogHandler;
 
 import java.util.HashMap;
@@ -36,7 +35,7 @@ public class LocalCache {
             }
             Node n = lru_cache.get(tail.query);
             removeNode(n, true);
-            currSizeBytes -= n.val.size();
+            currSizeBytes -= n.val.sizeBytes();
         }
     }
     public void put(String query, ImageObjectList val) {
@@ -46,7 +45,7 @@ public class LocalCache {
         n.query = query;
         n.val = val;
 
-        currSizeBytes += n.val.size();
+        currSizeBytes += n.val.sizeBytes();
         sizeUpdatedFlag();
 
         insertNodeAtTail(n, true);
@@ -57,7 +56,7 @@ public class LocalCache {
             return;
         }
         lru_cache.remove(query);
-        currSizeBytes -= n.val.size();
+        currSizeBytes -= n.val.sizeBytes();
     }
     public void removeNode(Node n, boolean removeFromMap) {
         if (n == null) return;
@@ -123,7 +122,7 @@ public class LocalCache {
         sb.append("LRU Cache | Elements: " + lru_cache.size() + " | Bytes: " +
                   currSizeBytes + " | Capacity in Bytes: " + MAX_CAPACITY_BYTES);
         for (String s : lru_cache.keySet()) {
-            sb.append(s + "->" + lru_cache.get(s).val.size());
+            sb.append(s + "->" + lru_cache.get(s).val.sizeBytes());
         }
         return sb.toString();
     }

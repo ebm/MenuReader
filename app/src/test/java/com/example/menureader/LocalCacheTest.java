@@ -10,12 +10,14 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class LocalCacheTest {
 
-    public ImageObject[] createNewImageObjects(int n, int size) {
-        return null;
-    }
+
     @Test
     public void testAddingImageObjectToCache() {
         LocalCache cache = new LocalCache(1000); // 1000 bytes;
+
+        ImageObject[] ioArr = TestUtils.createNewImageObjects(11, 100);
+
+
 
     }
 }

@@ -4,11 +4,11 @@ import java.util.HashSet;
 
 public class ImageObjectList {
     private HashSet<ImageObject> imageList;
-    private int size_bytes;
+    private int sizeBytes;
     private LocalCache lc;
 
     public ImageObjectList(LocalCache lc) {
-        size_bytes = 0;
+        sizeBytes = 0;
         imageList = new HashSet<>();
         this.lc = lc;
     }
@@ -16,16 +16,23 @@ public class ImageObjectList {
         return imageList.contains(io);
     }
     public void add(ImageObject io) {
-        assert(io != null);
-        lc.updateSize(io.getSize());
-        size_bytes += io.getSize();
+        if (io == null || imageList.contains(io)) {
+            throw new IllegalArgumentException("Attempted to add null or duplicate");
+        }
+        lc.updateSize(io.getSizeBytes());
+        sizeBytes += io.getSizeBytes();
         imageList.add(io);
     }
     public void remove(ImageObject io) {
-        assert(io != null && imageList.contains(io));
-        lc.updateSize(-io.getSize());
-        size_bytes -= io.getSize();
+        if (io == null || !imageList.contains(io)) {
+            throw new IllegalArgumentException("Attempted to remove null or nonexistent");
+        }
+        lc.updateSize(-io.getSizeBytes());
+        sizeBytes -= io.getSizeBytes();
         imageList.remove(io);
+    }
+    public int sizeBytes() {
+        return sizeBytes;
     }
     public int size() {
         return imageList.size();
