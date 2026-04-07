@@ -27,26 +27,23 @@ public class LocalCache {
         this();
         MAX_CAPACITY_BYTES = capacity;
     }
-    public void sizeUpdatedFlag() {
+    private void sizeUpdatedFlag() {
         while (currSizeBytes >= MAX_CAPACITY_BYTES) {
-            if (tail == null) {
+            if (head == null) {
                 LogHandler.m("Max capacity bytes is too low");
                 return;
             }
-            Node n = lru_cache.get(tail.query);
+            Node n = lru_cache.get(head.query);
             removeNode(n, true);
             currSizeBytes -= n.val.sizeBytes();
         }
     }
     public void put(String query, ImageObjectList val) {
-        assert(val != null);
+        assert(val != null && val.sizeBytes() == 0);
 
         Node n = new Node();
         n.query = query;
         n.val = val;
-
-        currSizeBytes += n.val.sizeBytes();
-        sizeUpdatedFlag();
 
         insertNodeAtTail(n, true);
     }
@@ -58,7 +55,7 @@ public class LocalCache {
         lru_cache.remove(query);
         currSizeBytes -= n.val.sizeBytes();
     }
-    public void removeNode(Node n, boolean removeFromMap) {
+    private void removeNode(Node n, boolean removeFromMap) {
         if (n == null) return;
         if (removeFromMap) {
             lru_cache.remove(n.query);
@@ -76,7 +73,7 @@ public class LocalCache {
             tail = null;
         }
     }
-    public void insertNodeAtTail(Node n, boolean addToMap) {
+    private void insertNodeAtTail(Node n, boolean addToMap) {
         if (addToMap) {
             lru_cache.put(n.query, n);
         }
@@ -96,33 +93,37 @@ public class LocalCache {
         insertNodeAtTail(n, false);
         return n.val;
     }
-    public void updateSize(int size) {
+    public void updateSize(int size, String query) {
         currSizeBytes += size;
+        assert(lru_cache.get(query) != null);
+        removeNode(lru_cache.get(query), false);
+        insertNodeAtTail(lru_cache.get(query), false);
+
         sizeUpdatedFlag();
     }
     public int getCurrSizeBytes() {
         return currSizeBytes;
     }
-    public int getIndexOfImageObject(String query) {
-        if (lru_cache.get(query) == null) return -1;
-        Node ptr = head;
-        int index = 0;
-        while (ptr != null) {
-            if (ptr.query.equals(query)) {
-                return index;
-            }
-            index++;
-            ptr = ptr.next;
-        }
-        throw new IllegalStateException("LRU Cache and linked list out of sync");
-    }
+//    public int getIndexOfImageObject(String query) {
+//        if (lru_cache.get(query) == null) return -1;
+//        Node ptr = head;
+//        int index = 0;
+//        while (ptr != null) {
+//            if (ptr.query.equals(query)) {
+//                return index;
+//            }
+//            index++;
+//            ptr = ptr.next;
+//        }
+//        throw new IllegalStateException("LRU Cache and linked list out of sync");
+//    }
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("LRU Cache | Elements: " + lru_cache.size() + " | Bytes: " +
-                  currSizeBytes + " | Capacity in Bytes: " + MAX_CAPACITY_BYTES);
+                  currSizeBytes + " | Capacity in Bytes: " + MAX_CAPACITY_BYTES + " |");
         for (String s : lru_cache.keySet()) {
-            sb.append(s + "->" + lru_cache.get(s).val.sizeBytes());
+            sb.append(s + "->" + lru_cache.get(s).val.sizeBytes() + "|");
         }
         return sb.toString();
     }

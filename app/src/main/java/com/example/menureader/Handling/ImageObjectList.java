@@ -6,8 +6,10 @@ public class ImageObjectList {
     private HashSet<ImageObject> imageList;
     private int sizeBytes;
     private LocalCache lc;
+    private String query;
 
-    public ImageObjectList(LocalCache lc) {
+    public ImageObjectList(String query, LocalCache lc) {
+        this.query = query;
         sizeBytes = 0;
         imageList = new HashSet<>();
         this.lc = lc;
@@ -19,7 +21,7 @@ public class ImageObjectList {
         if (io == null || imageList.contains(io)) {
             throw new IllegalArgumentException("Attempted to add null or duplicate");
         }
-        lc.updateSize(io.getSizeBytes());
+        lc.updateSize(io.getSizeBytes(), query);
         sizeBytes += io.getSizeBytes();
         imageList.add(io);
     }
@@ -27,7 +29,7 @@ public class ImageObjectList {
         if (io == null || !imageList.contains(io)) {
             throw new IllegalArgumentException("Attempted to remove null or nonexistent");
         }
-        lc.updateSize(-io.getSizeBytes());
+        lc.updateSize(-io.getSizeBytes(), query);
         sizeBytes -= io.getSizeBytes();
         imageList.remove(io);
     }
@@ -36,5 +38,9 @@ public class ImageObjectList {
     }
     public int size() {
         return imageList.size();
+    }
+
+    public String getQuery() {
+        return query;
     }
 }

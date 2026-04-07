@@ -20,7 +20,7 @@ public class ImageObjectListTest {
     @Before
     public void setUp() {
         cache = new LocalCache();
-        iol = new ImageObjectList(cache);
+        iol = new ImageObjectList("placeholder", cache);
         ioArr = TestUtils.createNewImageObjects(3, SIZE_BYTES);
     }
 
