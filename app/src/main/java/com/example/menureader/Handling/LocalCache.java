@@ -28,7 +28,7 @@ public class LocalCache {
         MAX_CAPACITY_BYTES = capacity;
     }
     private void sizeUpdatedFlag() {
-        while (currSizeBytes >= MAX_CAPACITY_BYTES) {
+        while (currSizeBytes > MAX_CAPACITY_BYTES) {
             if (head == null) {
                 LogHandler.m("Max capacity bytes is too low");
                 return;

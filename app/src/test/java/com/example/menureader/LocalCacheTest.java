@@ -30,6 +30,7 @@ public class LocalCacheTest {
     @Test
     public void testNewCacheEmpty() {
         assertEquals(0, cache.getCurrSizeBytes());
+        assertNull(cache.get("Does not exist"));
     }
     @Test
     public void testGetReturnsNullForEmptyCache() {
@@ -214,11 +215,6 @@ public class LocalCacheTest {
                 assertTrue(cache.getCurrSizeBytes() <= 1000);
             }
         }
-    }
-
-    @Test
-    public void testGetNonexistentKeyReturnsNull() {
-        assertNull(cache.get("doesNotExist"));
     }
 
     @Test
