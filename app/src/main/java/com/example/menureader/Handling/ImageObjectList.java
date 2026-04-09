@@ -5,7 +5,7 @@ import java.util.HashSet;
 public class ImageObjectList {
     private HashSet<ImageObject> imageList;
     private int sizeBytes;
-    private LocalCache lc;
+    private final LocalCache lc;
     private String query;
 
     public ImageObjectList(String query, LocalCache lc) {
@@ -14,17 +14,22 @@ public class ImageObjectList {
         imageList = new HashSet<>();
         this.lc = lc;
     }
+
     public boolean contains(ImageObject io) {
         return imageList.contains(io);
     }
+
     public void add(ImageObject io) {
-        if (io == null || imageList.contains(io)) {
-            throw new IllegalArgumentException("Attempted to add null or duplicate");
+        synchronized (lc) {
+            if (io == null || imageList.contains(io)) {
+                throw new IllegalArgumentException("Attempted to add null or duplicate");
+            }
+            lc.updateSize(io.getSizeBytes(), query);
+            sizeBytes += io.getSizeBytes();
+            imageList.add(io);
         }
-        lc.updateSize(io.getSizeBytes(), query);
-        sizeBytes += io.getSizeBytes();
-        imageList.add(io);
     }
+
     public void remove(ImageObject io) {
         if (io == null || !imageList.contains(io)) {
             throw new IllegalArgumentException("Attempted to remove null or nonexistent");
@@ -33,14 +38,20 @@ public class ImageObjectList {
         sizeBytes -= io.getSizeBytes();
         imageList.remove(io);
     }
+
     public int sizeBytes() {
         return sizeBytes;
     }
+
     public int size() {
         return imageList.size();
     }
 
     public String getQuery() {
         return query;
+    }
+
+    public HashSet<ImageObject> getImageObjects() {
+        return imageList;
     }
 }

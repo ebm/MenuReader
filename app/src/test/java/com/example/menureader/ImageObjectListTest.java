@@ -22,8 +22,7 @@ public class ImageObjectListTest {
     public void setUp() {
         query = "placeholder";
         cache = new LocalCache();
-        iol = new ImageObjectList(query, cache);
-        cache.put(query, iol);
+        iol = cache.putOrGet(query, new ImageObjectList(query, cache));
         ioArr = TestUtils.createNewImageObjects(3, SIZE_BYTES);
     }
 
@@ -45,6 +44,7 @@ public class ImageObjectListTest {
         assertEquals(1, iol.size());
         assertTrue(iol.contains(ioArr[0]));
     }
+
     @Test(expected = IllegalArgumentException.class)
     public void testAddWithoutCacheUpdate() {
         cache.remove(query);

@@ -32,26 +32,29 @@ public class LocalCacheTest {
         assertEquals(0, cache.getCurrSizeBytes());
         assertNull(cache.get("Does not exist"));
     }
+
     @Test
     public void testGetReturnsNullForEmptyCache() {
         assertNull(cache.get(ioArr[0].getImageURL()));
     }
+
     @Test
     public void testAddSingleImageObjectToCache() {
         iolArr[0] = new ImageObjectList(query, cache);
-        cache.put(query, iolArr[0]);
+        iolArr[0] = cache.putOrGet(query, iolArr[0]);
         assertEquals(0, cache.getCurrSizeBytes());
         iolArr[0].add(ioArr[0]);
         assertEquals(SIZE_BYTES, cache.getCurrSizeBytes());
         assertNotNull(cache.get(query));
     }
+
     @Test
     public void testAddMultipleImageObjectsToCache() {
         int index = 0;
         int totalSize = 0;
         for (int i = 0; i < 3; i++) {
             iolArr[i] = new ImageObjectList(query + i, cache);
-            cache.put(iolArr[i].getQuery(), iolArr[i]);
+            iolArr[i] = cache.putOrGet(iolArr[i].getQuery(), iolArr[i]);
             assertEquals(totalSize, cache.getCurrSizeBytes());
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
@@ -62,22 +65,24 @@ public class LocalCacheTest {
             assertEquals(iolArr[i], cache.get(iolArr[i].getQuery()));
         }
     }
+
     @Test
     public void testAddRemoveImageObjectToCache() {
         iolArr[0] = new ImageObjectList(query, cache);
-        cache.put(query, iolArr[0]);
+        iolArr[0] = cache.putOrGet(query, iolArr[0]);
         iolArr[0].add(ioArr[0]);
         cache.remove(query);
         assertNull(cache.get(query));
         assertEquals(0, cache.getCurrSizeBytes());
     }
+
     @Test
     public void testRemoveMultipleImageObjectsFromCache() {
         int index = 0;
         int totalSize = 0;
         for (int i = 0; i < 3; i++) {
             iolArr[i] = new ImageObjectList(query + i, cache);
-            cache.put(query + i, iolArr[i]);
+            iolArr[i] = cache.putOrGet(query + i, iolArr[i]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
             totalSize += SIZE_BYTES * 2;
@@ -89,12 +94,13 @@ public class LocalCacheTest {
             assertEquals(totalSize, cache.getCurrSizeBytes());
         }
     }
+
     @Test
     public void testEvictionFromCache() {
         int index = 0;
         for (int i = 0; i < 3; i++) {
             iolArr[i] = new ImageObjectList(query + i, cache);
-            cache.put(iolArr[i].getQuery(), iolArr[i]);
+            iolArr[i] = cache.putOrGet(iolArr[i].getQuery(), iolArr[i]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
@@ -104,24 +110,20 @@ public class LocalCacheTest {
         assertEquals(iolArr[1], cache.get(iolArr[1].getQuery()));
         assertEquals(iolArr[2], cache.get(iolArr[2].getQuery()));
     }
+
     @Test
     public void testGetMovesToFrontPreventsEviction() {
         int index = 0;
         for (int i = 0; i < 3; i++) {
             iolArr[i] = new ImageObjectList(query + i, cache);
-            cache.put(iolArr[i].getQuery(), iolArr[i]);
+            iolArr[i] = cache.putOrGet(iolArr[i].getQuery(), iolArr[i]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
         }
-        // 900 bytes used. Access iolArr[0] to make it recent
         cache.get(iolArr[0].getQuery());
-
-        // Add 200 more bytes to iolArr[2], pushing total over 1000
-        // Should evict iolArr[1] (least recently used), not iolArr[0]
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
-
         assertNotNull(cache.get(iolArr[0].getQuery()));
         assertNull(cache.get(iolArr[1].getQuery()));
         assertNotNull(cache.get(iolArr[2].getQuery()));
@@ -132,18 +134,14 @@ public class LocalCacheTest {
         int index = 0;
         for (int i = 0; i < 3; i++) {
             iolArr[i] = new ImageObjectList(query + i, cache);
-            cache.put(iolArr[i].getQuery(), iolArr[i]);
+            iolArr[i] = cache.putOrGet(iolArr[i].getQuery(), iolArr[i]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
         }
-        // 900 bytes. Adding to iolArr[0] makes it recent
         iolArr[0].add(ioArr[index++]);
-
-        // Add more to iolArr[2] to force eviction
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
-
         assertNotNull(cache.get(iolArr[0].getQuery()));
         assertNull(cache.get(iolArr[1].getQuery()));
         assertNotNull(cache.get(iolArr[2].getQuery()));
@@ -154,15 +152,13 @@ public class LocalCacheTest {
         int index = 0;
         for (int i = 0; i < 3; i++) {
             iolArr[i] = new ImageObjectList(query + i, cache);
-            cache.put(iolArr[i].getQuery(), iolArr[i]);
+            iolArr[i] = cache.putOrGet(iolArr[i].getQuery(), iolArr[i]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
         }
-        // 900 bytes. No access to any — iolArr[0] is oldest
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
-
         assertNull(cache.get(iolArr[0].getQuery()));
         assertNotNull(cache.get(iolArr[1].getQuery()));
         assertNotNull(cache.get(iolArr[2].getQuery()));
@@ -173,18 +169,16 @@ public class LocalCacheTest {
         int index = 0;
         for (int i = 0; i < 3; i++) {
             iolArr[i] = new ImageObjectList(query + i, cache);
-            cache.put(iolArr[i].getQuery(), iolArr[i]);
+            iolArr[i] = cache.putOrGet(iolArr[i].getQuery(), iolArr[i]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
         }
-        // 900 bytes. Add 500 more — need to evict both iolArr[0] and iolArr[1]
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
-
         assertNull(cache.get(iolArr[0].getQuery()));
         assertNull(cache.get(iolArr[1].getQuery()));
         assertNotNull(cache.get(iolArr[2].getQuery()));
@@ -196,7 +190,7 @@ public class LocalCacheTest {
         int index = 0;
         for (int i = 0; i < 3; i++) {
             iolArr[i] = new ImageObjectList(query + i, cache);
-            cache.put(iolArr[i].getQuery(), iolArr[i]);
+            iolArr[i] = cache.putOrGet(iolArr[i].getQuery(), iolArr[i]);
             for (int j = 0; j < 4; j++) {
                 iolArr[i].add(ioArr[index++]);
                 assertTrue(cache.getCurrSizeBytes() <= 1000);
@@ -209,38 +203,105 @@ public class LocalCacheTest {
         int index = 0;
         for (int i = 0; i < 3; i++) {
             iolArr[i] = new ImageObjectList(query + i, cache);
-            cache.put(iolArr[i].getQuery(), iolArr[i]);
+            iolArr[i] = cache.putOrGet(iolArr[i].getQuery(), iolArr[i]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
         }
-        // 900 bytes. Access in order: 0, 2 — makes 1 the least recent
         cache.get(iolArr[0].getQuery());
         cache.get(iolArr[2].getQuery());
-
-        // Force eviction
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
-
         assertNotNull(cache.get(iolArr[0].getQuery()));
         assertNull(cache.get(iolArr[1].getQuery()));
         assertNotNull(cache.get(iolArr[2].getQuery()));
     }
-    @Test(expected = IllegalArgumentException.class)
-    public void testPutDuplicateKeyThrows() {
+
+    @Test
+    public void testPutOrGetReturnsExistingList() {
         iolArr[0] = new ImageObjectList(query, cache);
-        cache.put(query, iolArr[0]);
+        iolArr[0] = cache.putOrGet(query, iolArr[0]);
         iolArr[0].add(ioArr[0]);
 
+        // Try to insert a new list with the same key
         iolArr[1] = new ImageObjectList(query, cache);
+        ImageObjectList returned = cache.putOrGet(query, iolArr[1]);
 
-        cache.put(query, iolArr[1]);
+        // Should get back the original, not the new one
+        assertSame(iolArr[0], returned);
+        assertEquals(1, cache.getSize());
+        assertEquals(SIZE_BYTES, cache.getCurrSizeBytes());
     }
 
     @Test
     public void testPutOrGetReturnedListIsUsable() {
         iolArr[0] = new ImageObjectList(query, cache);
-        cache.put(query, iolArr[0]);
+        iolArr[0] = cache.putOrGet(query, iolArr[0]);
+        iolArr[0].add(ioArr[0]);
+
+        // Simulate race: another thread tries to insert same query
+        iolArr[1] = new ImageObjectList(query, cache);
+        ImageObjectList returned = cache.putOrGet(query, iolArr[1]);
+
+        // Adding to the returned list should update the cache correctly
+        returned.add(ioArr[1]);
+        assertEquals(SIZE_BYTES * 2, cache.getCurrSizeBytes());
+        assertEquals(1, cache.getSize());
+    }
+
+    @Test
+    public void testPutOrGetNewKeyReturnsNewList() {
+        iolArr[0] = new ImageObjectList(query, cache);
+        ImageObjectList returned = cache.putOrGet(query, iolArr[0]);
+
+        assertSame(iolArr[0], returned);
+        assertEquals(1, cache.getSize());
+    }
+
+    @Test
+    public void testPutOrGetCallerUsesReturnValue() {
+        // Simulate disk load inserting first
+        iolArr[0] = new ImageObjectList(query, cache);
+        iolArr[0] = cache.putOrGet(query, iolArr[0]);
+        iolArr[0].add(ioArr[0]);
+        iolArr[0].add(ioArr[1]);
+
+        // Simulate user query arriving with same key
+        iolArr[1] = new ImageObjectList(query, cache);
+        iolArr[1] = cache.putOrGet(query, iolArr[1]);
+
+        // iolArr[1] should now be the same object as iolArr[0]
+        assertSame(iolArr[0], iolArr[1]);
+
+        // Adding through iolArr[1] updates the cache correctly
+        iolArr[1].add(ioArr[2]);
+        assertEquals(SIZE_BYTES * 3, cache.getCurrSizeBytes());
+        assertSame(cache.get(query), iolArr[1]);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPutOrGetRejectsNullVal() {
+        cache.putOrGet(query, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPutOrGetRejectsNonEmptyVal() {
+        // Insert a list and add an image to make it non-empty
+        iolArr[0] = new ImageObjectList(query, cache);
+        iolArr[0] = cache.putOrGet(query, iolArr[0]);
+        iolArr[0].add(ioArr[0]);
+
+        // Remove from cache but keep the reference
+        cache.remove(query);
+
+        // Try to re-insert the non-empty list — should reject
+        cache.putOrGet(query, iolArr[0]);
+    }
+
+    @Test
+    public void testRemoveThenPutOrGetSameKey() {
+        iolArr[0] = new ImageObjectList(query, cache);
+        iolArr[0] = cache.putOrGet(query, iolArr[0]);
         iolArr[0].add(ioArr[0]);
         iolArr[0].add(ioArr[1]);
         assertEquals(SIZE_BYTES * 2, cache.getCurrSizeBytes());
@@ -249,7 +310,7 @@ public class LocalCacheTest {
         assertEquals(0, cache.getCurrSizeBytes());
 
         iolArr[1] = new ImageObjectList(query, cache);
-        cache.put(query, iolArr[1]);
+        iolArr[1] = cache.putOrGet(query, iolArr[1]);
         iolArr[1].add(ioArr[2]);
 
         assertEquals(iolArr[1], cache.get(query));
@@ -262,24 +323,17 @@ public class LocalCacheTest {
         int index = 0;
         for (int i = 0; i < 3; i++) {
             iolArr[i] = new ImageObjectList(query + i, cache);
-            cache.put(iolArr[i].getQuery(), iolArr[i]);
+            iolArr[i] = cache.putOrGet(iolArr[i].getQuery(), iolArr[i]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
         }
-        // 900 bytes total, 300 each
-
         cache.remove(iolArr[1].getQuery());
-        // 600 bytes: iolArr[0]=300, iolArr[2]=300
-
-        // Add 500 bytes to iolArr[2] to force eviction of iolArr[0]
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
-        // Now: iolArr[0]=300 + iolArr[2]=800 = 1100 > 1000, evicts iolArr[0]
-
         assertNull(cache.get(iolArr[0].getQuery()));
         assertNotNull(cache.get(iolArr[2].getQuery()));
         assertEquals(1, cache.getSize());
@@ -290,26 +344,18 @@ public class LocalCacheTest {
         int index = 0;
         for (int i = 0; i < 3; i++) {
             iolArr[i] = new ImageObjectList(query + i, cache);
-            cache.put(iolArr[i].getQuery(), iolArr[i]);
+            iolArr[i] = cache.putOrGet(iolArr[i].getQuery(), iolArr[i]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
         }
-        // Order in list: 0 -> 1 -> 2
-
         cache.get(iolArr[1].getQuery());
-        // Order should now be: 0 -> 2 -> 1
-
         cache.get(iolArr[2].getQuery());
-        // Order should now be: 0 -> 1 -> 2
-
-        // Force eviction — should evict iolArr[0] first, then iolArr[1]
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
-
         assertNull(cache.get(iolArr[0].getQuery()));
         assertNull(cache.get(iolArr[1].getQuery()));
         assertNotNull(cache.get(iolArr[2].getQuery()));
@@ -320,37 +366,31 @@ public class LocalCacheTest {
         int index = 0;
         for (int i = 0; i < 3; i++) {
             iolArr[i] = new ImageObjectList(query + i, cache);
-            cache.put(iolArr[i].getQuery(), iolArr[i]);
+            iolArr[i] = cache.putOrGet(iolArr[i].getQuery(), iolArr[i]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
             iolArr[i].add(ioArr[index++]);
         }
-        // 900 bytes. Force eviction of iolArr[0]
         iolArr[2].add(ioArr[index++]);
         iolArr[2].add(ioArr[index++]);
-
-        // Add a brand new entry — should work without crashing
         ImageObjectList newList = new ImageObjectList("newquery", cache);
-        cache.put("newquery", newList);
+        newList = cache.putOrGet("newquery", newList);
         newList.add(ioArr[index++]);
-
         assertNotNull(cache.get("newquery"));
         assertNull(cache.get(iolArr[0].getQuery()));
         int expectedSize = iolArr[1].sizeBytes() + iolArr[2].sizeBytes() + newList.sizeBytes();
         assertEquals(expectedSize, cache.getCurrSizeBytes());
     }
+
     @Test
     public void testRemoveHead() {
         int index = 0;
         for (int i = 0; i < 3; i++) {
             iolArr[i] = new ImageObjectList(query + i, cache);
-            cache.put(iolArr[i].getQuery(), iolArr[i]);
+            iolArr[i] = cache.putOrGet(iolArr[i].getQuery(), iolArr[i]);
             iolArr[i].add(ioArr[index++]);
         }
-        // List: 0 -> 1 -> 2
         cache.remove(iolArr[0].getQuery());
-
-        // Verify head was cleanly removed and rest still works
         assertNull(cache.get(iolArr[0].getQuery()));
         assertNotNull(cache.get(iolArr[1].getQuery()));
         assertNotNull(cache.get(iolArr[2].getQuery()));
@@ -363,12 +403,10 @@ public class LocalCacheTest {
         int index = 0;
         for (int i = 0; i < 3; i++) {
             iolArr[i] = new ImageObjectList(query + i, cache);
-            cache.put(iolArr[i].getQuery(), iolArr[i]);
+            iolArr[i] = cache.putOrGet(iolArr[i].getQuery(), iolArr[i]);
             iolArr[i].add(ioArr[index++]);
         }
-        // List: 0 -> 1 -> 2
         cache.remove(iolArr[2].getQuery());
-
         assertNull(cache.get(iolArr[2].getQuery()));
         assertNotNull(cache.get(iolArr[0].getQuery()));
         assertNotNull(cache.get(iolArr[1].getQuery()));
@@ -379,18 +417,14 @@ public class LocalCacheTest {
     @Test
     public void testRemoveOnlyElement() {
         iolArr[0] = new ImageObjectList(query, cache);
-        cache.put(query, iolArr[0]);
+        iolArr[0] = cache.putOrGet(query, iolArr[0]);
         iolArr[0].add(ioArr[0]);
-
         cache.remove(query);
-
         assertNull(cache.get(query));
         assertEquals(0, cache.getCurrSizeBytes());
         assertEquals(0, cache.getSize());
-
-        // Verify cache is usable after emptying
         iolArr[1] = new ImageObjectList(query + "1", cache);
-        cache.put(iolArr[1].getQuery(), iolArr[1]);
+        iolArr[1] = cache.putOrGet(iolArr[1].getQuery(), iolArr[1]);
         iolArr[1].add(ioArr[1]);
         assertNotNull(cache.get(iolArr[1].getQuery()));
         assertEquals(SIZE_BYTES, cache.getCurrSizeBytes());
@@ -399,11 +433,9 @@ public class LocalCacheTest {
     @Test
     public void testRemoveNonexistentKeyIsNoOp() {
         iolArr[0] = new ImageObjectList(query, cache);
-        cache.put(query, iolArr[0]);
+        iolArr[0] = cache.putOrGet(query, iolArr[0]);
         iolArr[0].add(ioArr[0]);
-
         cache.remove("doesnotexist");
-
         assertEquals(SIZE_BYTES, cache.getCurrSizeBytes());
         assertEquals(1, cache.getSize());
         assertNotNull(cache.get(query));
@@ -412,13 +444,9 @@ public class LocalCacheTest {
     @Test
     public void testGetOnSingleElementCache() {
         iolArr[0] = new ImageObjectList(query, cache);
-        cache.put(query, iolArr[0]);
+        iolArr[0] = cache.putOrGet(query, iolArr[0]);
         iolArr[0].add(ioArr[0]);
-
-        // get() calls removeNode then insertNodeAtTail on the only node
-        // This exercises the head==tail edge case
         ImageObjectList result = cache.get(query);
-
         assertNotNull(result);
         assertEquals(iolArr[0], result);
         assertEquals(SIZE_BYTES, cache.getCurrSizeBytes());
@@ -427,31 +455,25 @@ public class LocalCacheTest {
 
     @Test
     public void testEvictionEvictsEntireImageObjectList() {
-        // Verify that when a node is evicted, all its bytes are subtracted
         int index = 0;
         iolArr[0] = new ImageObjectList(query + 0, cache);
-        cache.put(iolArr[0].getQuery(), iolArr[0]);
+        iolArr[0] = cache.putOrGet(iolArr[0].getQuery(), iolArr[0]);
         iolArr[0].add(ioArr[index++]);
         iolArr[0].add(ioArr[index++]);
         iolArr[0].add(ioArr[index++]);
         iolArr[0].add(ioArr[index++]);
         iolArr[0].add(ioArr[index++]);
-        // iolArr[0] = 500 bytes
-
         iolArr[1] = new ImageObjectList(query + 1, cache);
-        cache.put(iolArr[1].getQuery(), iolArr[1]);
+        iolArr[1] = cache.putOrGet(iolArr[1].getQuery(), iolArr[1]);
         iolArr[1].add(ioArr[index++]);
         iolArr[1].add(ioArr[index++]);
         iolArr[1].add(ioArr[index++]);
         iolArr[1].add(ioArr[index++]);
         iolArr[1].add(ioArr[index++]);
         iolArr[1].add(ioArr[index++]);
-        // iolArr[1] = 600 bytes, total = 1100, evicts iolArr[0] (500)
-
         assertNull(cache.get(iolArr[0].getQuery()));
         assertNotNull(cache.get(iolArr[1].getQuery()));
         assertEquals(600, cache.getCurrSizeBytes());
         assertEquals(1, cache.getSize());
     }
-
 }

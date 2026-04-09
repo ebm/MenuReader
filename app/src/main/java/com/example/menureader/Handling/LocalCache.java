@@ -2,8 +2,10 @@ package com.example.menureader.Handling;
 
 import com.example.menureader.LogHandler;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-
+import java.util.List;
+import java.util.Map;
 
 public class LocalCache {
     private static class Node {
@@ -12,21 +14,25 @@ public class LocalCache {
         public Node next;
         public Node prev;
     }
+
     private final HashMap<String, Node> lru_cache;
     private Node head; // represents eldest entry
     private Node tail; // represents newest entry
     private int MAX_CAPACITY_BYTES = 10_000_000;
     private int currSizeBytes;
+
     public LocalCache() {
         currSizeBytes = 0;
         lru_cache = new HashMap<>();
         head = null;
         tail = null;
     }
+
     public LocalCache(int capacity) {
         this();
         MAX_CAPACITY_BYTES = capacity;
     }
+
     private void sizeUpdatedFlag() {
         while (currSizeBytes > MAX_CAPACITY_BYTES) {
             if (head == null) {
@@ -39,19 +45,25 @@ public class LocalCache {
         }
     }
 
-    public void put(String query, ImageObjectList val) {
+    public synchronized ImageObjectList putOrGet(String query, ImageObjectList val) {
         if (val == null || val.sizeBytes() != 0) {
             throw new IllegalArgumentException("Invalid ImageObjectList");
-        } else if (lru_cache.get(query) != null) {
-            throw new IllegalArgumentException("ImageObjectList already exists.");
         }
+        Node n = lru_cache.get(query);
+        if (n == null) {
+            n = new Node();
+            n.query = query;
+            n.val = val;
 
-        Node n = new Node();
-        n.query = query;
-        n.val = val;
+            insertNodeAtTail(n, true);
+        } else {
+            removeNode(n, false);
+            insertNodeAtTail(n, false);
+        }
+        return n.val;
+    }
 
-        insertNodeAtTail(n, true);
-    }    public void remove(String query) {
+    public synchronized void remove(String query) {
         Node n = lru_cache.get(query);
         if (n == null) {
             return;
@@ -59,8 +71,10 @@ public class LocalCache {
         removeNode(n, true);
         currSizeBytes -= n.val.sizeBytes();
     }
+
     private void removeNode(Node n, boolean removeFromMap) {
-        if (n == null) return;
+        if (n == null)
+            return;
         if (removeFromMap) {
             lru_cache.remove(n.query);
         }
@@ -78,6 +92,7 @@ public class LocalCache {
             tail = null;
         }
     }
+
     private void insertNodeAtTail(Node n, boolean addToMap) {
         if (addToMap) {
             lru_cache.put(n.query, n);
@@ -91,14 +106,17 @@ public class LocalCache {
         n.prev = tail;
         tail = n;
     }
-    public ImageObjectList get(String query) {
+
+    public synchronized ImageObjectList get(String query) {
         Node n = lru_cache.get(query);
-        if (n == null) return null;
+        if (n == null)
+            return null;
         removeNode(n, false);
         insertNodeAtTail(n, false);
         return n.val;
     }
-    public void updateSize(int size, String query) {
+
+    public synchronized void updateSize(int size, String query) {
         currSizeBytes += size;
         if (lru_cache.get(query) == null) {
             throw new IllegalArgumentException("LRU Cache not updated with ImageObjectList");
@@ -108,33 +126,46 @@ public class LocalCache {
 
         sizeUpdatedFlag();
     }
-    public int getSize() {
+
+    public synchronized int getSize() {
         return lru_cache.size();
     }
-    public int getCurrSizeBytes() {
+
+    public synchronized int getCurrSizeBytes() {
         return currSizeBytes;
     }
-//    public int getIndexOfImageObject(String query) {
-//        if (lru_cache.get(query) == null) return -1;
-//        Node ptr = head;
-//        int index = 0;
-//        while (ptr != null) {
-//            if (ptr.query.equals(query)) {
-//                return index;
-//            }
-//            index++;
-//            ptr = ptr.next;
-//        }
-//        throw new IllegalStateException("LRU Cache and linked list out of sync");
-//    }
+
+    // public int getIndexOfImageObject(String query) {
+    // if (lru_cache.get(query) == null) return -1;
+    // Node ptr = head;
+    // int index = 0;
+    // while (ptr != null) {
+    // if (ptr.query.equals(query)) {
+    // return index;
+    // }
+    // index++;
+    // ptr = ptr.next;
+    // }
+    // throw new IllegalStateException("LRU Cache and linked list out of sync");
+    // }
     @Override
-    public String toString() {
+    public synchronized String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("LRU Cache | Elements: " + lru_cache.size() + " | Bytes: " +
-                  currSizeBytes + " | Capacity in Bytes: " + MAX_CAPACITY_BYTES + " |");
+                currSizeBytes + " | Capacity in Bytes: " + MAX_CAPACITY_BYTES + " |");
         for (String s : lru_cache.keySet()) {
             sb.append(s + "->" + lru_cache.get(s).val.sizeBytes() + "|");
         }
         return sb.toString();
+    }
+
+    public synchronized List<Map.Entry<String, ImageObjectList>> listOfCacheObjects() {
+        List<Map.Entry<String, ImageObjectList>> res = new ArrayList<>(lru_cache.size());
+        Node ptr = head;
+        while (ptr != null) {
+            res.add(Map.entry(ptr.query, ptr.val));
+            ptr = ptr.next;
+        }
+        return res;
     }
 }
