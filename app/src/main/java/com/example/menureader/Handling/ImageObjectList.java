@@ -31,12 +31,15 @@ public class ImageObjectList {
     }
 
     public void remove(ImageObject io) {
-        if (io == null || !imageList.contains(io)) {
-            throw new IllegalArgumentException("Attempted to remove null or nonexistent");
+        synchronized (lc) {
+            if (io == null || !imageList.contains(io)) {
+                throw new IllegalArgumentException("Attempted to remove null or nonexistent");
+            }
+            lc.updateSize(-io.getSizeBytes(), query);
+            sizeBytes -= io.getSizeBytes();
+            imageList.remove(io);
         }
-        lc.updateSize(-io.getSizeBytes(), query);
-        sizeBytes -= io.getSizeBytes();
-        imageList.remove(io);
+
     }
 
     public int sizeBytes() {

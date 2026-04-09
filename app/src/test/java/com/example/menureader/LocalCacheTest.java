@@ -9,6 +9,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assert.*;
 
 @RunWith(RobolectricTestRunner.class)
@@ -475,5 +478,124 @@ public class LocalCacheTest {
         assertNotNull(cache.get(iolArr[1].getQuery()));
         assertEquals(600, cache.getCurrSizeBytes());
         assertEquals(1, cache.getSize());
+    }
+    @Test
+    public void testConcurrentAdds() throws InterruptedException {
+        LocalCache cache = new LocalCache(10_000_000);
+        int numThreads = 10;
+        int imagesPerThread = 5;
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(numThreads);
+
+        for (int t = 0; t < numThreads; t++) {
+            final int threadId = t;
+            new Thread(() -> {
+                try {
+                    startLatch.await(); // all threads start at once
+                    String query = "query" + threadId;
+                    ImageObjectList iol = new ImageObjectList(query, cache);
+                    iol = cache.putOrGet(query, iol);
+                    for (int i = 0; i < imagesPerThread; i++) {
+                        ImageObject io = TestUtils.createNewImageObjects(1, 100)[0];
+                        iol.add(io);
+                    }
+                } catch (Exception e) {
+                    fail("Thread " + threadId + " threw: " + e.getMessage());
+                } finally {
+                    doneLatch.countDown();
+                }
+            }).start();
+        }
+
+        startLatch.countDown(); // release all threads
+        doneLatch.await(5, TimeUnit.SECONDS);
+
+        assertEquals(numThreads, cache.getSize());
+        assertEquals(numThreads * imagesPerThread * 100, cache.getCurrSizeBytes());
+    }
+
+    @Test
+    public void testConcurrentReadsAndWrites() throws InterruptedException {
+        LocalCache cache = new LocalCache(10_000_000);
+        int numQueries = 5;
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(numQueries * 2);
+
+        // Writer threads
+        for (int t = 0; t < numQueries; t++) {
+            final int threadId = t;
+            new Thread(() -> {
+                try {
+                    startLatch.await();
+                    String query = "query" + threadId;
+                    ImageObjectList iol = new ImageObjectList(query, cache);
+                    iol = cache.putOrGet(query, iol);
+                    for (int i = 0; i < 5; i++) {
+                        ImageObject io = TestUtils.createNewImageObjects(1, 100)[0];
+                        iol.add(io);
+                    }
+                } catch (Exception e) {
+                    fail("Writer " + threadId + " threw: " + e.getMessage());
+                } finally {
+                    doneLatch.countDown();
+                }
+            }).start();
+        }
+
+        // Reader threads
+        for (int t = 0; t < numQueries; t++) {
+            final int threadId = t;
+            new Thread(() -> {
+                try {
+                    startLatch.await();
+                    for (int i = 0; i < 20; i++) {
+                        cache.get("query" + (threadId % numQueries));
+                        cache.getSize();
+                        cache.getCurrSizeBytes();
+                    }
+                } catch (Exception e) {
+                    fail("Reader " + threadId + " threw: " + e.getMessage());
+                } finally {
+                    doneLatch.countDown();
+                }
+            }).start();
+        }
+
+        startLatch.countDown();
+        assertTrue(doneLatch.await(5, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testConcurrentPutOrGetSameKey() throws InterruptedException {
+        LocalCache cache = new LocalCache(10_000_000);
+        int numThreads = 10;
+        String query = "shared_query";
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(numThreads);
+        ImageObjectList[] results = new ImageObjectList[numThreads];
+
+        for (int t = 0; t < numThreads; t++) {
+            final int threadId = t;
+            new Thread(() -> {
+                try {
+                    startLatch.await();
+                    ImageObjectList iol = new ImageObjectList(query, cache);
+                    results[threadId] = cache.putOrGet(query, iol);
+                } catch (Exception e) {
+                    fail("Thread " + threadId + " threw: " + e.getMessage());
+                } finally {
+                    doneLatch.countDown();
+                }
+            }).start();
+        }
+
+        startLatch.countDown();
+        doneLatch.await(5, TimeUnit.SECONDS);
+
+        // All threads should have gotten back the same instance
+        assertEquals(1, cache.getSize());
+        for (int i = 1; i < numThreads; i++) {
+            assertSame(results[0], results[i]);
+        }
     }
 }

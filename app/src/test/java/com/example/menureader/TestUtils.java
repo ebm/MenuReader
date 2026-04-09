@@ -7,10 +7,12 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
 public class TestUtils {
+    private static final AtomicInteger counter = new AtomicInteger(0);
     /**
      * Creates a bitmap of size bytes
      * @param bytes
@@ -64,7 +66,7 @@ public class TestUtils {
     public static ImageObject[] createNewImageObjects(int n, int sizeBytes) {
         ImageObject[] ioArr = new ImageObject[n];
         for (int i = 0; i < n; i++) {
-            ioArr[i] = TestUtils.createImageObject(sizeBytes, String.valueOf(i));
+            ioArr[i] = TestUtils.createImageObject(sizeBytes, String.valueOf(counter.getAndIncrement()));
         }
         return ioArr;
     }
