@@ -15,7 +15,7 @@ public class LocalCache {
     private final HashMap<String, Node> lru_cache;
     private Node head; // represents eldest entry
     private Node tail; // represents newest entry
-    private  int MAX_CAPACITY_BYTES = 10_000_000;
+    private int MAX_CAPACITY_BYTES = 10_000_000;
     private int currSizeBytes;
     public LocalCache() {
         currSizeBytes = 0;
@@ -38,21 +38,25 @@ public class LocalCache {
             currSizeBytes -= n.val.sizeBytes();
         }
     }
+
     public void put(String query, ImageObjectList val) {
-        assert(val != null && val.sizeBytes() == 0);
+        if (val == null || val.sizeBytes() != 0) {
+            throw new IllegalArgumentException("Invalid ImageObjectList");
+        } else if (lru_cache.get(query) != null) {
+            throw new IllegalArgumentException("ImageObjectList already exists.");
+        }
 
         Node n = new Node();
         n.query = query;
         n.val = val;
 
         insertNodeAtTail(n, true);
-    }
-    public void remove(String query) {
+    }    public void remove(String query) {
         Node n = lru_cache.get(query);
         if (n == null) {
             return;
         }
-        lru_cache.remove(query);
+        removeNode(n, true);
         currSizeBytes -= n.val.sizeBytes();
     }
     private void removeNode(Node n, boolean removeFromMap) {
@@ -62,6 +66,7 @@ public class LocalCache {
         }
         if (n.next != null && n.prev != null) {
             n.prev.next = n.next;
+            n.next.prev = n.prev;
         } else if (n.next == null && n.prev != null) {
             tail = tail.prev;
             tail.next = null;
@@ -102,6 +107,9 @@ public class LocalCache {
         insertNodeAtTail(lru_cache.get(query), false);
 
         sizeUpdatedFlag();
+    }
+    public int getSize() {
+        return lru_cache.size();
     }
     public int getCurrSizeBytes() {
         return currSizeBytes;
