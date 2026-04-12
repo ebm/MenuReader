@@ -17,7 +17,7 @@ public class ImageObjectList {
         return imageList.contains(io);
     }
 
-    public void add(ImageObject io) {
+    public synchronized void add(ImageObject io) {
         if (io == null || imageList.contains(io)) {
             throw new IllegalArgumentException("Attempted to add null or duplicate");
         }
@@ -25,7 +25,7 @@ public class ImageObjectList {
         imageList.add(io);
     }
 
-    public void remove(ImageObject io) {
+    public synchronized void remove(ImageObject io) {
         if (io == null || !imageList.contains(io)) {
             throw new IllegalArgumentException("Attempted to remove null or nonexistent");
         }
@@ -33,19 +33,19 @@ public class ImageObjectList {
         imageList.remove(io);
     }
 
-    public int sizeBytes() {
+    public synchronized int sizeBytes() {
         return sizeBytes;
     }
 
-    public int size() {
+    public synchronized int size() {
         return imageList.size();
     }
 
-    public String getQuery() {
+    public synchronized String getQuery() {
         return query;
     }
 
-    public HashSet<ImageObject> getImageObjects() {
+    public synchronized HashSet<ImageObject> getImageObjects() {
         return imageList;
     }
 }
