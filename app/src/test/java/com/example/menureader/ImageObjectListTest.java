@@ -14,15 +14,13 @@ import static org.junit.Assert.*;
 public class ImageObjectListTest {
     private ImageObjectList iol;
     private ImageObject[] ioArr;
-    private LocalCache cache;
     private static final int SIZE_BYTES = 100;
     private String query;
 
     @Before
     public void setUp() {
         query = "placeholder";
-        cache = new LocalCache();
-        iol = cache.putOrGet(query, new ImageObjectList(query, cache));
+        iol = new ImageObjectList(query);
         ioArr = TestUtils.createNewImageObjects(3, SIZE_BYTES);
     }
 
@@ -43,12 +41,6 @@ public class ImageObjectListTest {
         assertEquals(SIZE_BYTES, iol.sizeBytes());
         assertEquals(1, iol.size());
         assertTrue(iol.contains(ioArr[0]));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testAddWithoutCacheUpdate() {
-        cache.remove(query);
-        iol.add(ioArr[0]);
     }
 
     @Test
@@ -108,7 +100,7 @@ public class ImageObjectListTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testAddNullIsIgnored() {
+    public void testAddNull() {
         iol.add(null);
     }
 
@@ -118,15 +110,26 @@ public class ImageObjectListTest {
     }
 
     @Test
-    public void testAddUpdatesCacheSize() {
-        iol.add(ioArr[0]);
-        assertEquals(SIZE_BYTES, cache.getCurrSizeBytes());
+    public void testGetQuery() {
+        assertEquals(query, iol.getQuery());
     }
 
     @Test
-    public void testRemoveUpdatesCacheSize() {
+    public void testGetImageObjects() {
+        iol.add(ioArr[0]);
+        iol.add(ioArr[1]);
+        assertEquals(2, iol.getImageObjects().size());
+        assertTrue(iol.getImageObjects().contains(ioArr[0]));
+        assertTrue(iol.getImageObjects().contains(ioArr[1]));
+    }
+
+    @Test
+    public void testAddThenRemoveThenAddSameItem() {
         iol.add(ioArr[0]);
         iol.remove(ioArr[0]);
-        assertEquals(0, cache.getCurrSizeBytes());
+        iol.add(ioArr[0]);
+        assertEquals(SIZE_BYTES, iol.sizeBytes());
+        assertEquals(1, iol.size());
+        assertTrue(iol.contains(ioArr[0]));
     }
 }
