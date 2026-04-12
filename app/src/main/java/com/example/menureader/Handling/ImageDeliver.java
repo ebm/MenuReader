@@ -3,8 +3,13 @@ package com.example.menureader.Handling;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import androidx.fragment.app.FragmentActivity;
+import androidx.lifecycle.ViewModelProvider;
 import com.example.menureader.BuildConfig;
+import com.example.menureader.Front.SharedViewModel;
+import com.example.menureader.LogHandler;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -13,13 +18,51 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ImageDeliver {
-    private static final String ACCESS_KEY = BuildConfig.UNSPLASH_KEY;
-    private static final String URL_STRING = "https://api.unsplash.com/search/photos?query=";
+    private final String ACCESS_KEY = BuildConfig.UNSPLASH_KEY;
+    private final String URL_STRING = "https://api.unsplash.com/search/photos?query=";
+
     public interface OnImageResultListener {
         void onImageSuccess(Bitmap bitmap);
+
         void onImageError(Exception e);
+    }
+
+    public final int totalImageCount = 3;
+    public final AtomicInteger imageFound = new AtomicInteger(0);
+    public final AtomicInteger imageFailed = new AtomicInteger(0);
+    private final String query;
+    private final FragmentActivity activity;
+    private final OnImageResultListener listener;
+    private ImageObjectList iol;
+    private final LocalCache cache;
+
+    public ImageDeliver(String query, FragmentActivity activity, OnImageResultListener listener) {
+        this.query = query;
+        this.activity = activity;
+        this.listener = listener;
+
+        SharedViewModel svm = new ViewModelProvider(activity).get(SharedViewModel.class);
+        cache = svm.getCache();
+
+        if (!cacheFound()) {
+            LogHandler.m("Cache miss");
+            searchFood();
+        }
+    }
+
+    public boolean cacheFound() {
+        iol = cache.get(query);
+        if (iol == null) return false;
+
+        iol = cache.get(query);
+        LogHandler.m("Cache Hit!");
+        HashSet<ImageObject> ioList = iol.getImageObjects();
+        listener.onImageSuccess(ioList.iterator().next().getBitmap());
+        return true;
     }
 
     /**
@@ -28,31 +71,37 @@ public class ImageDeliver {
      * @param imageURL
      * @param activity current activity
      * @param listener
+     * @param thread   whether to use a thread
      */
-    public static void getBitmapFromUrlThread(String imageURL, Activity activity, OnImageResultListener listener) {
+    public static void getBitmapFromURL(String imageURL, Activity activity,
+                                        boolean thread, OnImageResultListener listener) {
+        if (!thread) {
+            try {
+                Bitmap bitmap = getBitmapFromUrlNoThread(imageURL);
+                listener.onImageSuccess(bitmap);
+            } catch (Exception e) {
+                listener.onImageError(e);
+            }
+            return;
+        }
         new Thread(() -> {
             try {
-                URL url = new URL(imageURL);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setDoInput(true);
-                conn.connect();
-                InputStream input = conn.getInputStream();
-                Bitmap bitmap =  BitmapFactory.decodeStream(input);
-
+                Bitmap bitmap = getBitmapFromUrlNoThread(imageURL);
                 activity.runOnUiThread(() -> listener.onImageSuccess(bitmap));
             } catch (Exception e) {
                 activity.runOnUiThread(() -> listener.onImageError(e));
             }
-        });
+        }).start();
     }
 
     /**
      * Uses an existing thread to get a bitmap from imageURL
+     *
      * @param imageURL
      * @return a bitmap
      * @throws Exception outer thread must handle exception
      */
-    public static Bitmap getBitmapFromUrlNoThread(String imageURL) throws Exception{
+    public static Bitmap getBitmapFromUrlNoThread(String imageURL) throws Exception {
         URL url = new URL(imageURL);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setDoInput(true);
@@ -63,15 +112,13 @@ public class ImageDeliver {
 
     /**
      * Searches for food a food image on an image server given a query
-     * @param food query
-     * @param activity activity to get UI thread
-     * @param listener
      */
-    public static void searchFood(String food, Activity activity, OnImageResultListener listener) {
+    private void searchFood() {
+        iol = new ImageObjectList(query);
         new Thread(() -> {
             try {
-                String encoded = URLEncoder.encode(food, "UTF-8");
-                URL url = new URL(URL_STRING + encoded + "&per_page=1");
+                String encoded = URLEncoder.encode(query, "UTF-8");
+                URL url = new URL(URL_STRING + encoded + "&per_page=" + totalImageCount);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestProperty("Authorization", "Client-ID " + ACCESS_KEY);
                 conn.setRequestMethod("GET");
@@ -86,17 +133,61 @@ public class ImageDeliver {
 
                 JSONObject json = new JSONObject(response.toString());
                 JSONArray res = json.getJSONArray("results");
-                if (res.length() > 0) {
-                    String imageURL = res.getJSONObject(0).getJSONObject("urls").getString("small");
 
-                    Bitmap bitmap = getBitmapFromUrlNoThread(imageURL);
-                    activity.runOnUiThread((() -> listener.onImageSuccess(bitmap)));
-                } else {
-                    activity.runOnUiThread(() -> listener.onImageError(new Exception("Error loading image.")));
-                }
+                handleResults(res);
             } catch (Exception e) {
                 listener.onImageError(e);
             }
         }).start();
+    }
+
+    private void checkCompletion(boolean succeeded) {
+        LogHandler.m("Checking for completion.");
+        int totalImagesSucceeded;
+        int totalImagesFailed;
+        if (succeeded) {
+            totalImagesSucceeded = imageFound.incrementAndGet();
+            totalImagesFailed = imageFailed.get();
+        } else {
+            totalImagesSucceeded = imageFound.get();
+            totalImagesFailed = imageFailed.incrementAndGet();
+        }
+        if (totalImagesSucceeded + totalImagesFailed == totalImageCount) {
+            LogHandler.m("All images accounted for. Succeeded: " + totalImagesSucceeded + ", Failed: " + totalImagesFailed);
+
+            if (totalImagesSucceeded >= 1) {
+                cache.put(query, iol);
+                activity.runOnUiThread((() -> listener.onImageSuccess(iol.getImageObjects().iterator().next().getBitmap())));
+            } else {
+                activity.runOnUiThread(() -> listener.onImageError(new Exception("Error loading image.")));
+            }
+        }
+    }
+
+    private void handleResults(JSONArray res) throws JSONException {
+        LogHandler.m("Found " + res.length() + " result(s)");
+        if (res.length() > 0) {
+            iol = new ImageObjectList(query);
+            for (int i = 0; i < res.length(); i++) {
+                String imageURL = res.getJSONObject(i).getJSONObject("urls").getString("small");
+                LogHandler.m("Image " + i + " trying url=" + imageURL);
+                new ImageObject(imageURL, activity, new ImageObject.OnImageObjectSuccess() {
+                    @Override
+                    public void onImageCreation(ImageObject imageObject) {
+                        LogHandler.m("Found image");
+                        iol.add(imageObject);
+                        checkCompletion(true);
+                    }
+
+                    @Override
+                    public void onImageFailure(Exception e) {
+                        LogHandler.m("Failed to find image", e);
+                        checkCompletion(false);
+                    }
+                });
+            }
+        } else {
+            activity.runOnUiThread(() -> listener.onImageError(new Exception("Error loading image.")));
+        }
     }
 }

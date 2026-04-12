@@ -29,14 +29,13 @@ public class ResultsFragment extends Fragment {
     /**
      * Function gets called before fragment loads
      *
-     * @param inflater The LayoutInflater object that can be used to inflate
-     * any views in the fragment,
-     * @param container If non-null, this is the parent view that the fragment's
-     * UI should be attached to.  The fragment should not add the view itself,
-     * but this can be used to generate the LayoutParams of the view.
+     * @param inflater           The LayoutInflater object that can be used to inflate
+     *                           any views in the fragment,
+     * @param container          If non-null, this is the parent view that the fragment's
+     *                           UI should be attached to.  The fragment should not add the view itself,
+     *                           but this can be used to generate the LayoutParams of the view.
      * @param savedInstanceState If non-null, this fragment is being re-constructed
-     * from a previous saved state as given here.
-     *
+     *                           from a previous saved state as given here.
      * @return
      */
     @Override
@@ -112,7 +111,7 @@ public class ResultsFragment extends Fragment {
         assert mode != null;
         if (mode.equals("Photo")) {
             initializePhoto(view);
-        } else if (mode.equals("MenuList")){
+        } else if (mode.equals("MenuList")) {
             initializeMenu(view);
         } else {
             LogHandler.m("Mode set to something not handled");
@@ -154,10 +153,11 @@ public class ResultsFragment extends Fragment {
     /**
      * Initializes menu. Mode should be "MenuList" at this point and svm.getMenu()
      * should have a menu added to the shared variable.
+     *
      * @param view
      */
     private void initializeMenu(View view) {
-        assert(svm.getMenu() != null);
+        assert (svm.getMenu() != null);
         ImageView image = view.findViewById(R.id.menuImage);
         menu = null;
         initializeHyperlinks(image, svm.getMenu());
@@ -166,10 +166,11 @@ public class ResultsFragment extends Fragment {
     /**
      * Initialize menu. Mode should be "Photo" at this point and svm.getBitmap()
      * should not be null
+     *
      * @param view
      */
     private void initializePhoto(View view) {
-        assert(svm.getBitmap() != null);
+        assert (svm.getBitmap() != null);
         ImageView image = view.findViewById(R.id.menuImage);
         menu = null;
         new Menu(svm.getBitmap(), new Menu.OnMenuReadyListener() {
@@ -196,10 +197,11 @@ public class ResultsFragment extends Fragment {
 
     /**
      * Searches an image given some string text. Puts a dialog with retrieved image(s)
+     *
      * @param text query
      */
     private void searchImage(String text) {
-        ImageDeliver.searchFood(text, requireActivity(), new ImageDeliver.OnImageResultListener() {
+        new ImageDeliver(text, requireActivity(), new ImageDeliver.OnImageResultListener() {
             @Override
             public void onImageSuccess(Bitmap bitmap) {
                 Dialog dialog = new Dialog(requireContext());
@@ -252,6 +254,7 @@ public class ResultsFragment extends Fragment {
     /**
      * Image does not take up entire screen. Need Matrix calculations to convert coordinates of
      * tap to coordinates on image.
+     *
      * @param imageView
      * @param tapX
      * @param tapY

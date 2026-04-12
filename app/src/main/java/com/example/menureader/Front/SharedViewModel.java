@@ -2,6 +2,7 @@ package com.example.menureader.Front;
 
 import android.graphics.Bitmap;
 import androidx.lifecycle.ViewModel;
+import com.example.menureader.Handling.LocalCache;
 import com.example.menureader.Handling.Menu;
 
 import java.util.ArrayList;
@@ -14,9 +15,11 @@ public class SharedViewModel extends ViewModel {
     private Bitmap bitmap;
     private Menu menu;
     private final List<Menu> menuList;
+    private final LocalCache cache;
 
     public SharedViewModel() {
         menuList = new ArrayList<>();
+        cache = new LocalCache();
     }
 
     public Bitmap getBitmap() {
@@ -40,5 +43,9 @@ public class SharedViewModel extends ViewModel {
 
     public void setMenu(Menu menu) {
         this.menu = menu;
+    }
+
+    public LocalCache getCache() {
+        return cache;
     }
 }

@@ -34,8 +34,7 @@ public class ImageObject {
 
     /**
      * Creates an ImageObject given a string url of an image. Needs a listener to handle
-     * the callback when ImageObject has succeeded/failed. Also allocates a thread if current
-     * thread is the UI thread.
+     * the callback when ImageObject has succeeded/failed.
      *
      * @param imageURL
      * @param activity
@@ -43,8 +42,9 @@ public class ImageObject {
      */
     public ImageObject(String imageURL, Activity activity, OnImageObjectSuccess listener) {
         this.sizeBytes = Controller.getStringSize(imageURL);
+        this.imageURL = imageURL;
         ImageDeliver.getBitmapFromURL(imageURL, activity,
-                Looper.myLooper() == Looper.getMainLooper(), new ImageDeliver.OnImageResultListener() {
+                true /*Looper.myLooper() == Looper.getMainLooper()*/, new ImageDeliver.OnImageResultListener() {
             @Override
             public void onImageSuccess(Bitmap bitmap) {
                 ImageObject.this.setBitmap(bitmap);

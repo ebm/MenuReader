@@ -13,7 +13,7 @@ public class ImageObjectList {
         imageList = new HashSet<>();
     }
 
-    public boolean contains(ImageObject io) {
+    public synchronized boolean contains(ImageObject io) {
         return imageList.contains(io);
     }
 

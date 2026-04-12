@@ -15,10 +15,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-class CachePersistence {
+public class CachePersistence {
     private static final String INDEX_FILE = "cache_urls.json";
 
     public static void load(LocalCache cache, Activity activity) {
+        LogHandler.m("Load attempted");
         File indexFile = new File(activity.getFilesDir(), INDEX_FILE);
         if (!indexFile.exists()) {
             LogHandler.m(INDEX_FILE + " does not exist");
@@ -33,6 +34,7 @@ class CachePersistence {
                 }
             }
             String json = sb.toString();
+            if (json.isEmpty()) return;
             JSONObject index = new JSONObject(json);
             Iterator<String> queries = index.keys();
             while (queries.hasNext()) {
@@ -47,6 +49,13 @@ class CachePersistence {
                         @Override
                         public void onImageCreation(ImageObject imageObject) {
                             iol.add(imageObject);
+                            /**
+                             * the decision has to be made whether to create
+                             * a new function in LocalCache. Either I create an add()
+                             * function which adds any iols to existing iols in the list
+                             * or force the caller of put to hold a lock on LocalCache
+                             * synchronized(LocalCache)
+                             */
                         }
 
                         @Override
@@ -62,6 +71,8 @@ class CachePersistence {
     }
 
     public static void save(LocalCache cache, Context context) {
+        LogHandler.m("Save attempted");
+        if (cache.getSize() == 0) return;
         File indexFile = new File(context.getFilesDir(), INDEX_FILE);
         try {
             JSONObject index = new JSONObject();
@@ -75,6 +86,7 @@ class CachePersistence {
             }
             FileWriter writer = new FileWriter(indexFile);
             writer.write(index.toString());
+            writer.close();
         } catch (Exception e) {
             LogHandler.m("Failed to save cache", e);
         }
