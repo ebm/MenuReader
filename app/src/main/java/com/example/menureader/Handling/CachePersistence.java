@@ -39,7 +39,8 @@ class CachePersistence {
                 String query = queries.next();
                 JSONArray urls = index.getJSONArray(query);
 
-                ImageObjectList iol = cache.putOrGet(query, new ImageObjectList(query, cache));
+                ImageObjectList iol = new ImageObjectList(query);
+                cache.put(query, iol);
                 for (int i = 0; i < urls.length(); i++) {
                     String url = urls.getString(i);
                     new ImageObject(url, activity, new ImageObject.OnImageObjectSuccess() {

@@ -11,6 +11,7 @@ public class LocalCache {
     private static class Node {
         public String query;
         public ImageObjectList val;
+        public int sizeBytes;
         public Node next;
         public Node prev;
     }
@@ -41,26 +42,36 @@ public class LocalCache {
             }
             Node n = lru_cache.get(head.query);
             removeNode(n, true);
+            if (n.sizeBytes != n.val.sizeBytes()) {
+                throw new IllegalStateException("The query " + n.query + " has not updated the cache size properly.");
+            }
             currSizeBytes -= n.val.sizeBytes();
         }
     }
-
-    public synchronized ImageObjectList putOrGet(String query, ImageObjectList val) {
-        if (val == null || val.sizeBytes() != 0) {
-            throw new IllegalArgumentException("Invalid ImageObjectList");
+    public synchronized void put(String query, ImageObjectList val) {
+        if (val == null) {
+            throw new IllegalArgumentException("ImageObjectList is null");
         }
         Node n = lru_cache.get(query);
         if (n == null) {
             n = new Node();
             n.query = query;
             n.val = val;
+            n.sizeBytes = val.sizeBytes();
 
             insertNodeAtTail(n, true);
+            currSizeBytes += n.sizeBytes;
         } else {
+            n.val = val;
+
             removeNode(n, false);
             insertNodeAtTail(n, false);
+
+            currSizeBytes -= n.sizeBytes;
+            currSizeBytes += n.val.sizeBytes();
+            n.sizeBytes = n.val.sizeBytes();
         }
-        return n.val;
+        sizeUpdatedFlag();
     }
 
     public synchronized void remove(String query) {
@@ -69,7 +80,7 @@ public class LocalCache {
             return;
         }
         removeNode(n, true);
-        currSizeBytes -= n.val.sizeBytes();
+        currSizeBytes -= n.sizeBytes;
     }
 
     private void removeNode(Node n, boolean removeFromMap) {
@@ -114,17 +125,6 @@ public class LocalCache {
         removeNode(n, false);
         insertNodeAtTail(n, false);
         return n.val;
-    }
-
-    public synchronized void updateSize(int size, String query) {
-        currSizeBytes += size;
-        if (lru_cache.get(query) == null) {
-            throw new IllegalArgumentException("LRU Cache not updated with ImageObjectList");
-        }
-        removeNode(lru_cache.get(query), false);
-        insertNodeAtTail(lru_cache.get(query), false);
-
-        sizeUpdatedFlag();
     }
 
     public synchronized int getSize() {

@@ -11,6 +11,7 @@ import org.robolectric.RobolectricTestRunner;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 
@@ -482,8 +483,8 @@ public class LocalCacheTest {
     @Test
     public void testConcurrentAdds() throws InterruptedException {
         LocalCache cache = new LocalCache(10_000_000);
-        int numThreads = 10;
-        int imagesPerThread = 5;
+        int numThreads = 100;
+        int imagesPerThread = 50;
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch doneLatch = new CountDownLatch(numThreads);
 
@@ -517,7 +518,7 @@ public class LocalCacheTest {
     @Test
     public void testConcurrentReadsAndWrites() throws InterruptedException {
         LocalCache cache = new LocalCache(10_000_000);
-        int numQueries = 5;
+        int numQueries = 50;
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch doneLatch = new CountDownLatch(numQueries * 2);
 
@@ -568,7 +569,7 @@ public class LocalCacheTest {
     @Test
     public void testConcurrentPutOrGetSameKey() throws InterruptedException {
         LocalCache cache = new LocalCache(10_000_000);
-        int numThreads = 10;
+        int numThreads = 100;
         String query = "shared_query";
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch doneLatch = new CountDownLatch(numThreads);
@@ -596,6 +597,143 @@ public class LocalCacheTest {
         assertEquals(1, cache.getSize());
         for (int i = 1; i < numThreads; i++) {
             assertSame(results[0], results[i]);
+        }
+    }
+    @Test
+    public void testConcurrencyStress() throws InterruptedException {
+        for (int run = 0; run < 50; run++) {
+            LocalCache cache = new LocalCache(5000);
+            int numThreads = 20;
+            int opsPerThread = 100;
+            CountDownLatch startLatch = new CountDownLatch(1);
+            CountDownLatch doneLatch = new CountDownLatch(numThreads);
+            AtomicReference<Throwable> error = new AtomicReference<>(null);
+
+            for (int t = 0; t < numThreads; t++) {
+                final int threadId = t;
+                new Thread(() -> {
+                    try {
+                        startLatch.await();
+                        // In testConcurrencyStress
+                        for (int i = 0; i < opsPerThread; i++) {
+                            String query = "q" + threadId + "_" + i;
+                            ImageObjectList iol = new ImageObjectList(query, cache);
+                            iol = cache.putOrGet(query, iol);
+                            String id = "t" + threadId + "_o" + i;
+                            ImageObject io = TestUtils.createImageObject(100, id);
+                            iol.add(io);
+
+                            cache.get("q" + ((threadId + 1) % numThreads) + "_" + i);
+                            cache.getSize();
+                            cache.getCurrSizeBytes();
+                        }
+                    } catch (Throwable e) {
+                        error.compareAndSet(null, e);
+                    } finally {
+                        doneLatch.countDown();
+                    }
+                }).start();
+            }
+
+            startLatch.countDown();
+            assertTrue("Timed out on run " + run, doneLatch.await(10, TimeUnit.SECONDS));
+            assertNull("Run " + run + " threw: " + error.get(), error.get());
+
+            // Size accounting must be consistent
+            assertTrue("Size exceeded capacity on run " + run,
+                    cache.getCurrSizeBytes() <= 5000);
+            assertTrue("Negative size on run " + run,
+                    cache.getCurrSizeBytes() >= 0);
+        }
+    }
+
+    @Test
+    public void testConcurrentAddToSameList() throws InterruptedException {
+        for (int run = 0; run < 100; run++) {
+            LocalCache cache = new LocalCache(10_000_000);
+            String query = "shared";
+            ImageObjectList iol = new ImageObjectList(query, cache);
+            iol = cache.putOrGet(query, iol);
+            final ImageObjectList sharedIol = iol;
+
+            int numThreads = 20;
+            int addsPerThread = 50;
+            CountDownLatch startLatch = new CountDownLatch(1);
+            CountDownLatch doneLatch = new CountDownLatch(numThreads);
+            AtomicReference<Throwable> error = new AtomicReference<>(null);
+
+            for (int t = 0; t < numThreads; t++) {
+                new Thread(() -> {
+                    try {
+                        startLatch.await();
+                        // In testConcurrentAddToSameList
+                        for (int i = 0; i < addsPerThread; i++) {
+                            String id = "t" + Thread.currentThread().getId() + "_i" + i;
+                            ImageObject io = TestUtils.createImageObject(100, id);
+                            sharedIol.add(io);
+                        }
+                    } catch (Throwable e) {
+                        error.compareAndSet(null, e);
+                    } finally {
+                        doneLatch.countDown();
+                    }
+                }).start();
+            }
+
+            startLatch.countDown();
+            assertTrue("Timed out on run " + run, doneLatch.await(10, TimeUnit.SECONDS));
+            assertNull("Run " + run + " threw: " + error.get(), error.get());
+
+            int expectedSize = numThreads * addsPerThread;
+            int expectedBytes = expectedSize * 100;
+            assertEquals("Wrong count on run " + run, expectedSize, sharedIol.size());
+            assertEquals("Wrong list bytes on run " + run, expectedBytes, sharedIol.sizeBytes());
+            assertEquals("Wrong cache bytes on run " + run, expectedBytes, cache.getCurrSizeBytes());
+        }
+    }
+
+    @Test
+    public void testConcurrentEvictionConsistency() throws InterruptedException {
+        for (int run = 0; run < 50; run++) {
+            LocalCache cache = new LocalCache(1000);
+            int numThreads = 10;
+            CountDownLatch startLatch = new CountDownLatch(1);
+            CountDownLatch doneLatch = new CountDownLatch(numThreads);
+            AtomicReference<Throwable> error = new AtomicReference<>(null);
+
+            for (int t = 0; t < numThreads; t++) {
+                final int threadId = t;
+                new Thread(() -> {
+                    try {
+                        startLatch.await();
+                        for (int i = 0; i < 20; i++) {
+                            String query = "t" + threadId + "_r" + i;
+                            ImageObjectList iol = new ImageObjectList(query, cache);
+                            iol = cache.putOrGet(query, iol);
+                            // Add multiple images to force eviction
+                            for (int j = 0; j < 3; j++) {
+                                ImageObject io = TestUtils.createImageObject(100);
+                                iol.add(io);
+                            }
+                        }
+                    } catch (Throwable e) {
+                        error.compareAndSet(null, e);
+                    } finally {
+                        doneLatch.countDown();
+                    }
+                }).start();
+            }
+
+            startLatch.countDown();
+            assertTrue("Timed out on run " + run, doneLatch.await(10, TimeUnit.SECONDS));
+            assertNull("Run " + run + " threw: " + error.get(), error.get());
+
+            assertTrue("Size exceeded capacity on run " + run,
+                    cache.getCurrSizeBytes() <= 1000);
+            assertTrue("Negative size on run " + run,
+                    cache.getCurrSizeBytes() >= 0);
+            assertTrue("Size/count mismatch on run " + run,
+                    cache.getSize() > 0);
         }
     }
 }
