@@ -18,7 +18,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ImageDeliver {
@@ -57,10 +56,10 @@ public class ImageDeliver {
     public boolean cacheFound() {
         iol = cache.get(query);
         if (iol == null) return false;
-
         LogHandler.m("Cache Hit!");
-        HashSet<ImageObject> ioList = iol.getImageObjects();
-        listener.onImageSuccess(ioList.iterator().next().getBitmap());
+        for (ImageObject io : iol.getImageObjects()) {
+            listener.onImageSuccess(io.getBitmap());
+        }
         return true;
     }
 
@@ -139,28 +138,6 @@ public class ImageDeliver {
         }).start();
     }
 
-    private void checkCompletion(boolean succeeded) {
-        LogHandler.m("Checking for completion.");
-        int totalImagesSucceeded;
-        int totalImagesFailed;
-        if (succeeded) {
-            totalImagesSucceeded = imageFound.incrementAndGet();
-            totalImagesFailed = imageFailed.get();
-        } else {
-            totalImagesSucceeded = imageFound.get();
-            totalImagesFailed = imageFailed.incrementAndGet();
-        }
-        if (totalImagesSucceeded + totalImagesFailed == totalImageCount) {
-            LogHandler.m("All images accounted for. Succeeded: " + totalImagesSucceeded + ", Failed: " + totalImagesFailed);
-            if (totalImagesSucceeded == 0) {
-                activity.runOnUiThread(() -> listener.onImageError(new Exception("Error loading image.")));
-            }
-        }
-        if (totalImagesSucceeded == 1) {
-            activity.runOnUiThread((() -> listener.onImageSuccess(iol.getImageObjects().iterator().next().getBitmap())));
-        }
-    }
-
     private void handleResults(JSONArray res) throws JSONException {
         LogHandler.m("Found " + res.length() + " result(s)");
         if (res.length() > 0) {
@@ -174,13 +151,17 @@ public class ImageDeliver {
                     public void onImageCreation(ImageObject imageObject) {
                         LogHandler.m("Found image");
                         cache.addToList(query, imageObject);
-                        checkCompletion(true);
+                        imageFound.incrementAndGet();
+                        activity.runOnUiThread(() -> listener.onImageSuccess(imageObject.getBitmap()));
                     }
 
                     @Override
                     public void onImageFailure(Exception e) {
                         LogHandler.m("Failed to find image", e);
-                        checkCompletion(false);
+                        int failed = imageFailed.incrementAndGet();
+                        if (imageFound.get() + failed == totalImageCount && imageFound.get() == 0) {
+                            activity.runOnUiThread(() -> listener.onImageError(new Exception("Error loading image.")));
+                        }
                     }
                 });
             }

@@ -1,6 +1,5 @@
 package com.example.menureader.Front;
 
-import android.app.Dialog;
 import android.graphics.*;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -196,23 +195,19 @@ public class ResultsFragment extends Fragment {
     }
 
     /**
-     * Searches an image given some string text. Puts a dialog with retrieved image(s)
+     * Searches an image given some string text. Opens a swipeable gallery bottom sheet.
      *
      * @param text query
      */
     private void searchImage(String text) {
+        ImageViewerDialog dialog = ImageViewerDialog.newInstance(text);
+
+        // Create ImageDeliver before show() so cache-hit images (delivered synchronously)
+        // are queued in the dialog before onCreateView runs.
         new ImageDeliver(text, requireActivity(), new ImageDeliver.OnImageResultListener() {
             @Override
             public void onImageSuccess(Bitmap bitmap) {
-                Dialog dialog = new Dialog(requireContext());
-
-                ImageView imageView = new ImageView(requireContext());
-                imageView.setImageBitmap(bitmap);
-                imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
-
-                dialog.setContentView(imageView);
-                dialog.setTitle(text);
-                dialog.show();
+                dialog.addImage(bitmap);
             }
 
             @Override
@@ -220,6 +215,8 @@ public class ResultsFragment extends Fragment {
                 LogHandler.m("Error loading image", e);
             }
         });
+
+        dialog.show(getParentFragmentManager(), "image_viewer");
     }
 
     /**
