@@ -72,7 +72,10 @@ public class CachePersistence {
 
     public static void save(LocalCache cache, Context context) {
         LogHandler.m("Save attempted");
-        if (cache.getSize() == 0) return;
+        if (cache.getSize() == 0) {
+            LogHandler.m("Save failed. Cache is empty");
+            return;
+        }
         File indexFile = new File(context.getFilesDir(), INDEX_FILE);
         try {
             JSONObject index = new JSONObject();
