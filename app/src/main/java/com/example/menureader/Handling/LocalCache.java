@@ -48,6 +48,22 @@ public class LocalCache {
             currSizeBytes -= n.val.sizeBytes();
         }
     }
+    public synchronized void addToList(String query, ImageObject io) {
+        Node n = lru_cache.get(query);
+        if (n == null) {
+            LogHandler.m("Unable to add io to query (not in cache): " + query);
+            return;
+        }
+        removeNode(n, false);
+        insertNodeAtTail(n, false);
+
+        n.val.add(io);
+        currSizeBytes -= n.sizeBytes;
+        currSizeBytes += n.val.sizeBytes();
+        n.sizeBytes = n.val.sizeBytes();
+
+        sizeUpdatedFlag();
+    }
     public synchronized void put(String query, ImageObjectList val) {
         if (val == null) {
             throw new IllegalArgumentException("ImageObjectList is null");

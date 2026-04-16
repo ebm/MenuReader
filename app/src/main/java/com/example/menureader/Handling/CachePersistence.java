@@ -48,14 +48,7 @@ public class CachePersistence {
                     new ImageObject(url, activity, new ImageObject.OnImageObjectSuccess() {
                         @Override
                         public void onImageCreation(ImageObject imageObject) {
-                            iol.add(imageObject);
-                            /**
-                             * the decision has to be made whether to create
-                             * a new function in LocalCache. Either I create an add()
-                             * function which adds any iols to existing iols in the list
-                             * or force the caller of put to hold a lock on LocalCache
-                             * synchronized(LocalCache)
-                             */
+                            cache.addToList(query, imageObject);
                         }
 
                         @Override
