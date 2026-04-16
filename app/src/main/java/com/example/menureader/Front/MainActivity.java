@@ -2,7 +2,7 @@ package com.example.menureader.Front;
 
 import android.os.Bundle;
 import androidx.lifecycle.ViewModelProvider;
-import com.example.menureader.Handling.CachePersistence;
+import com.example.menureader.Handling.Persistence;
 import com.example.menureader.LogHandler;
 import com.example.menureader.R;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,7 +21,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         LogHandler.m("In Main Activity");
         svm = new ViewModelProvider(this).get(SharedViewModel.class);
-        CachePersistence.load(svm.getCache(), this);
+        Persistence.load(svm.getCache(), this);
+        Persistence.loadMenuList(this, menu -> svm.addMenu(menu));
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -29,6 +30,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        new Thread(() -> CachePersistence.save(svm.getCache(), this.getApplicationContext())).start();
+        new Thread(() -> {
+            Persistence.save(svm.getCache(), this.getApplicationContext());
+            Persistence.saveMenuList(svm.getMenuList(), this.getApplicationContext());
+        }).start();
     }
 }

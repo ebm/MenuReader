@@ -13,17 +13,13 @@ import java.util.List;
 
 public class Menu {
     private String text;
+    private String name;
 
     private List<MenuLine> menuList;
     private final Bitmap imageBitmap;
-
-    public Bitmap getImageBitmap() {
-        return imageBitmap;
-    }
-
+    private final long createdAt;
     public interface OnMenuReadyListener {
         void onMenuReady(Menu menu);
-
         void onMenuFailed(Exception e);
     }
 
@@ -33,8 +29,24 @@ public class Menu {
         this.menuList = new ArrayList<>();
         InputImage image = InputImage.fromBitmap(imageBitmap, 0);
         processImage(image, listener);
+
+        createdAt = System.nanoTime();
     }
 
+    public Menu(String text, Bitmap imageBitmap, List<MenuLine> menuList) {
+        this.text = text;
+        this.imageBitmap = imageBitmap;
+        this.menuList = menuList;
+
+        createdAt = System.nanoTime();
+    }
+    public Menu(String text, Bitmap imageBitmap, List<MenuLine> menuList, String name, long createdAt) {
+        this.text = text;
+        this.imageBitmap = imageBitmap;
+        this.menuList = menuList;
+        this.name = name;
+        this.createdAt = createdAt;
+    }
     /**
      * Processes an image with OCR
      *
@@ -64,6 +76,21 @@ public class Menu {
     }
     public String getText() {
         return text;
+    }
+    public Bitmap getImageBitmap() {
+        return imageBitmap;
+    }
+
+    public long getCreatedAt() {
+        return createdAt;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
     public List<MenuLine> getMenuList() {
         return menuList;

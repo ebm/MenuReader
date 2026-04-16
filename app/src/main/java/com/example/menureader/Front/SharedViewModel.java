@@ -16,6 +16,11 @@ public class SharedViewModel extends ViewModel {
     private Menu menu;
     private final List<Menu> menuList;
     private final LocalCache cache;
+    private OnMenuAddedListener menuAddedListener;
+
+    public interface OnMenuAddedListener {
+        void onMenuAdded(int index);
+    }
 
     public SharedViewModel() {
         menuList = new ArrayList<>();
@@ -32,7 +37,11 @@ public class SharedViewModel extends ViewModel {
 
     public void addMenu(Menu menu) {
         menuList.add(menu);
+        if (menuAddedListener != null) {
+            menuAddedListener.onMenuAdded(menuList.size() - 1);
+        }
     }
+
     public List<Menu> getMenuList() {
         return menuList;
     }
@@ -47,5 +56,13 @@ public class SharedViewModel extends ViewModel {
 
     public LocalCache getCache() {
         return cache;
+    }
+
+    public void setMenuAddedListener(OnMenuAddedListener listener) {
+        this.menuAddedListener = listener;
+    }
+
+    public void clearMenuAddedListener() {
+        this.menuAddedListener = null;
     }
 }

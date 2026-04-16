@@ -22,6 +22,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class MenuListFragment extends Fragment {
+    private SharedViewModel svm;
+    private MenuListAdapter mla;
+
     /**
      * Function gets called before fragment loads
      *
@@ -47,11 +50,10 @@ public class MenuListFragment extends Fragment {
         // Recycler view initialization
         RecyclerView rv = view.findViewById(R.id.recyclerView);
         rv.setLayoutManager(new LinearLayoutManager(requireContext()));
-        // Temporary initializer for menu list. TODO: Create saving functionality so menu list persists
 
-        SharedViewModel svm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+        svm = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
 
-        MenuListAdapter mla = new MenuListAdapter(svm.getMenuList(), menu -> {
+        mla = new MenuListAdapter(svm.getMenuList(), menu -> {
             Bundle args = new Bundle();
             args.putString("mode", "MenuList");
             svm.setMenu(menu);
@@ -59,9 +61,18 @@ public class MenuListFragment extends Fragment {
         });
         rv.setAdapter(mla);
 
+        svm.setMenuAddedListener(index -> mla.notifyItemInserted(index));
+
         FloatingActionButton fab = view.findViewById(R.id.fabCamera);
         fab.setOnClickListener(v -> NavHostFragment.findNavController(this).navigate(R.id.action_menulist_to_camera));
         return view;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        svm.clearMenuAddedListener();
+        mla = null;
     }
 
     /**
