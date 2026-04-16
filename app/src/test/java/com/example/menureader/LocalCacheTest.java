@@ -446,6 +446,103 @@ public class LocalCacheTest {
         assertEquals(expectedSize, cache.getCurrSizeBytes());
     }
 
+    // ==================== addToList ====================
+
+    @Test
+    public void testAddToListAddsItemAndUpdatesSize() {
+        iolArr[0] = new ImageObjectList(query);
+        cache.put(query, iolArr[0]);
+
+        cache.addToList(query, ioArr[0]);
+
+        assertEquals(SIZE_BYTES, cache.getCurrSizeBytes());
+        assertEquals(1, cache.get(query).size());
+        assertTrue(cache.get(query).contains(ioArr[0]));
+    }
+
+    @Test
+    public void testAddToListMultipleItems() {
+        iolArr[0] = new ImageObjectList(query);
+        cache.put(query, iolArr[0]);
+
+        cache.addToList(query, ioArr[0]);
+        cache.addToList(query, ioArr[1]);
+        cache.addToList(query, ioArr[2]);
+
+        assertEquals(SIZE_BYTES * 3, cache.getCurrSizeBytes());
+        assertEquals(3, cache.get(query).size());
+    }
+
+    @Test
+    public void testAddToListOnMissingEntryCreatesNewEntry() {
+        cache.addToList(query, ioArr[0]);
+
+        assertNotNull(cache.get(query));
+        assertEquals(SIZE_BYTES, cache.getCurrSizeBytes());
+        assertEquals(1, cache.getSize());
+        assertTrue(cache.get(query).contains(ioArr[0]));
+    }
+
+    @Test
+    public void testAddToListOnEvictedEntryCreatesNewEntry() {
+        int index = 0;
+        iolArr[0] = new ImageObjectList(query);
+        for (int i = 0; i < 10; i++) iolArr[0].add(ioArr[index++]); // 1000 bytes = full
+        cache.put(query, iolArr[0]);
+
+        iolArr[1] = new ImageObjectList(query + "1");
+        iolArr[1].add(ioArr[index++]);
+        cache.put(iolArr[1].getQuery(), iolArr[1]); // triggers eviction of iolArr[0]
+
+        assertNull(cache.get(query));
+
+        cache.addToList(query, ioArr[index]);
+        assertNotNull(cache.get(query));
+        assertEquals(1, cache.get(query).size());
+        assertTrue(cache.get(query).contains(ioArr[index]));
+    }
+
+    @Test
+    public void testAddToListPromotesEntry() {
+        int index = 0;
+        for (int i = 0; i < 3; i++) {
+            iolArr[i] = new ImageObjectList(query + i);
+            iolArr[i].add(ioArr[index++]);
+            iolArr[i].add(ioArr[index++]);
+            iolArr[i].add(ioArr[index++]);
+            cache.put(iolArr[i].getQuery(), iolArr[i]);
+        }
+        // 900 bytes. addToList on iolArr[0] promotes it to most recently used
+        cache.addToList(iolArr[0].getQuery(), ioArr[index++]);
+
+        // Add 200 bytes — should evict iolArr[1], not iolArr[0]
+        iolArr[2].add(ioArr[index++]);
+        iolArr[2].add(ioArr[index++]);
+        cache.put(iolArr[2].getQuery(), iolArr[2]);
+
+        assertNotNull(cache.get(iolArr[0].getQuery()));
+        assertNull(cache.get(iolArr[1].getQuery()));
+        assertNotNull(cache.get(iolArr[2].getQuery()));
+    }
+
+    @Test
+    public void testAddToListCanTriggerEviction() {
+        int index = 0;
+        iolArr[0] = new ImageObjectList(query + 0);
+        for (int i = 0; i < 9; i++) iolArr[0].add(ioArr[index++]); // 900 bytes
+        cache.put(iolArr[0].getQuery(), iolArr[0]);
+
+        iolArr[1] = new ImageObjectList(query + 1); // empty
+        cache.put(iolArr[1].getQuery(), iolArr[1]);
+
+        cache.addToList(iolArr[1].getQuery(), ioArr[index++]); // 1000 bytes, no eviction yet
+        cache.addToList(iolArr[1].getQuery(), ioArr[index++]); // 1100 bytes → evicts iolArr[0]
+
+        assertNull(cache.get(iolArr[0].getQuery()));
+        assertNotNull(cache.get(iolArr[1].getQuery()));
+        assertTrue(cache.getCurrSizeBytes() <= 1000);
+    }
+
     // ==================== Concurrency - Correctness ====================
 
     @Test
@@ -537,6 +634,80 @@ public class LocalCacheTest {
         assertNull("Threw: " + error.get(), error.get());
     }
 
+    // ==================== Concurrency - addToList ====================
+
+    @Test
+    public void testConcurrentAddToListSameQuery() throws InterruptedException {
+        LocalCache cache = new LocalCache(10_000_000);
+        int numThreads = 50;
+        ImageObject[] ios = TestUtils.createNewImageObjects(numThreads, SIZE_BYTES);
+        cache.put(query, new ImageObjectList(query));
+
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(numThreads);
+        AtomicReference<Throwable> error = new AtomicReference<>(null);
+
+        for (int t = 0; t < numThreads; t++) {
+            final int threadId = t;
+            new Thread(() -> {
+                try {
+                    startLatch.await();
+                    cache.addToList(query, ios[threadId]);
+                } catch (Throwable e) {
+                    error.compareAndSet(null, e);
+                } finally {
+                    doneLatch.countDown();
+                }
+            }).start();
+        }
+
+        startLatch.countDown();
+        assertTrue(doneLatch.await(5, TimeUnit.SECONDS));
+        assertNull("Threw: " + error.get(), error.get());
+        assertEquals(numThreads * SIZE_BYTES, cache.getCurrSizeBytes());
+        assertEquals(numThreads, cache.get(query).size());
+    }
+
+    @Test
+    public void testConcurrentAddToListAndPut() throws InterruptedException {
+        LocalCache cache = new LocalCache(10_000_000);
+        int numThreads = 50;
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(numThreads * 2);
+        AtomicReference<Throwable> error = new AtomicReference<>(null);
+
+        for (int t = 0; t < numThreads; t++) {
+            final String q = "query" + t;
+            final ImageObject io = TestUtils.createImageObject(SIZE_BYTES, "io" + t);
+            new Thread(() -> {
+                try {
+                    startLatch.await();
+                    cache.put(q, new ImageObjectList(q));
+                } catch (Throwable e) {
+                    error.compareAndSet(null, e);
+                } finally {
+                    doneLatch.countDown();
+                }
+            }).start();
+            new Thread(() -> {
+                try {
+                    startLatch.await();
+                    cache.addToList(q, io);
+                } catch (Throwable e) {
+                    error.compareAndSet(null, e);
+                } finally {
+                    doneLatch.countDown();
+                }
+            }).start();
+        }
+
+        startLatch.countDown();
+        assertTrue(doneLatch.await(5, TimeUnit.SECONDS));
+        assertNull("Threw: " + error.get(), error.get());
+        assertTrue(cache.getCurrSizeBytes() >= 0);
+        assertTrue(cache.getCurrSizeBytes() <= 10_000_000);
+    }
+
     // ==================== Concurrency - Stress ====================
 
     @Test
@@ -564,6 +735,42 @@ public class LocalCacheTest {
                             cache.get("q" + ((threadId + 1) % numThreads) + "_" + i);
                             cache.getSize();
                             cache.getCurrSizeBytes();
+                        }
+                    } catch (Throwable e) {
+                        error.compareAndSet(null, e);
+                    } finally {
+                        doneLatch.countDown();
+                    }
+                }).start();
+            }
+
+            startLatch.countDown();
+            assertTrue("Timed out on run " + run, doneLatch.await(10, TimeUnit.SECONDS));
+            assertNull("Run " + run + " threw: " + error.get(), error.get());
+            assertTrue("Size exceeded capacity on run " + run, cache.getCurrSizeBytes() <= 5000);
+            assertTrue("Negative size on run " + run, cache.getCurrSizeBytes() >= 0);
+        }
+    }
+
+    @Test
+    public void testAddToListStress() throws InterruptedException {
+        for (int run = 0; run < 50; run++) {
+            LocalCache cache = new LocalCache(5000);
+            int numThreads = 20;
+            CountDownLatch startLatch = new CountDownLatch(1);
+            CountDownLatch doneLatch = new CountDownLatch(numThreads);
+            AtomicReference<Throwable> error = new AtomicReference<>(null);
+
+            for (int t = 0; t < numThreads; t++) {
+                final int threadId = t;
+                final int runId = run;
+                new Thread(() -> {
+                    try {
+                        startLatch.await();
+                        for (int i = 0; i < 20; i++) {
+                            String q = "q" + (threadId % 5);
+                            ImageObject io = TestUtils.createImageObject(100, "r" + runId + "t" + threadId + "i" + i);
+                            cache.addToList(q, io);
                         }
                     } catch (Throwable e) {
                         error.compareAndSet(null, e);

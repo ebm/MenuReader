@@ -117,6 +117,8 @@ public class LocalCache {
             head = null;
             tail = null;
         }
+        n.next = null;
+        n.prev = null;
     }
 
     private void insertNodeAtTail(Node n, boolean addToMap) {
