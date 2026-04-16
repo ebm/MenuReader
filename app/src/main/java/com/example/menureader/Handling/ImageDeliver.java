@@ -58,7 +58,6 @@ public class ImageDeliver {
         iol = cache.get(query);
         if (iol == null) return false;
 
-        iol = cache.get(query);
         LogHandler.m("Cache Hit!");
         HashSet<ImageObject> ioList = iol.getImageObjects();
         listener.onImageSuccess(ioList.iterator().next().getBitmap());
@@ -114,7 +113,6 @@ public class ImageDeliver {
      * Searches for food a food image on an image server given a query
      */
     private void searchFood() {
-        iol = new ImageObjectList(query);
         new Thread(() -> {
             try {
                 String encoded = URLEncoder.encode(query, "UTF-8");
@@ -154,13 +152,12 @@ public class ImageDeliver {
         }
         if (totalImagesSucceeded + totalImagesFailed == totalImageCount) {
             LogHandler.m("All images accounted for. Succeeded: " + totalImagesSucceeded + ", Failed: " + totalImagesFailed);
-
-            if (totalImagesSucceeded >= 1) {
-                cache.put(query, iol);
-                activity.runOnUiThread((() -> listener.onImageSuccess(iol.getImageObjects().iterator().next().getBitmap())));
-            } else {
+            if (totalImagesSucceeded == 0) {
                 activity.runOnUiThread(() -> listener.onImageError(new Exception("Error loading image.")));
             }
+        }
+        if (totalImagesSucceeded == 1) {
+            activity.runOnUiThread((() -> listener.onImageSuccess(iol.getImageObjects().iterator().next().getBitmap())));
         }
     }
 
@@ -168,6 +165,7 @@ public class ImageDeliver {
         LogHandler.m("Found " + res.length() + " result(s)");
         if (res.length() > 0) {
             iol = new ImageObjectList(query);
+            cache.put(query, iol);
             for (int i = 0; i < res.length(); i++) {
                 String imageURL = res.getJSONObject(i).getJSONObject("urls").getString("small");
                 LogHandler.m("Image " + i + " trying url=" + imageURL);
@@ -175,7 +173,7 @@ public class ImageDeliver {
                     @Override
                     public void onImageCreation(ImageObject imageObject) {
                         LogHandler.m("Found image");
-                        iol.add(imageObject);
+                        cache.addToList(query, imageObject);
                         checkCompletion(true);
                     }
 
