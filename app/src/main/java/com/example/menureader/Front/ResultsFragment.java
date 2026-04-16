@@ -92,7 +92,7 @@ public class ResultsFragment extends Fragment {
         });
 
         if (mode.equals("Photo")) {
-            retakePhotoButton.setText("Retake Photo");
+            retakePhotoButton.setText("Retake");
             discardButton.setText("Discard");
         } else if (mode.equals("MenuList")) {
             retakePhotoButton.setText("Photo");
@@ -135,18 +135,29 @@ public class ResultsFragment extends Fragment {
         setupTouchListener(image, imageMatrix, scaleDetector, menu);
     }
 
-    /** Returns a copy of the menu's image with red bounding boxes drawn around each menu item. */
+    /** Returns a copy of the menu's image with bounding boxes drawn around each menu item. */
     private Bitmap drawBoundingBoxes(Menu menu) {
         Bitmap bm = menu.getImageBitmap().copy(Bitmap.Config.ARGB_8888, true);
         Canvas canvas = new Canvas(bm);
-        Paint paint = new Paint();
-        paint.setColor(Color.RED);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(3f);
+        float radius = 8f;
+
         for (MenuLine ml : menu.getMenuList()) {
             Rect bounds = ml.getLineBounds();
-            if (bounds != null) canvas.drawRect(bounds, paint);
-            else LogHandler.m("bounds is null for input: " + ml.getText());
+            if (bounds == null) {
+                LogHandler.m("bounds is null for input: " + ml.getText());
+                continue;
+            }
+            RectF rf = new RectF(bounds);
+            // Dark halo — visible on light backgrounds
+            paint.setColor(Color.argb(180, 0, 0, 50));
+            paint.setStrokeWidth(6f);
+            canvas.drawRoundRect(rf, radius, radius, paint);
+            // White inner stroke — visible on dark backgrounds
+            paint.setColor(Color.WHITE);
+            paint.setStrokeWidth(2.5f);
+            canvas.drawRoundRect(rf, radius, radius, paint);
         }
         return bm;
     }
