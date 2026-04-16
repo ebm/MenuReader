@@ -48,26 +48,7 @@ public class LocalCache {
             currSizeBytes -= n.val.sizeBytes();
         }
     }
-    public synchronized void addToList(String query, ImageObject io) {
-        Node n = lru_cache.get(query);
-        if (n == null) {
-            LogHandler.m("Unable to add io to query (not in cache): " + query);
-            return;
-        }
-        removeNode(n, false);
-        insertNodeAtTail(n, false);
-
-        n.val.add(io);
-        currSizeBytes -= n.sizeBytes;
-        currSizeBytes += n.val.sizeBytes();
-        n.sizeBytes = n.val.sizeBytes();
-
-        sizeUpdatedFlag();
-    }
-    public synchronized void put(String query, ImageObjectList val) {
-        if (val == null) {
-            throw new IllegalArgumentException("ImageObjectList is null");
-        }
+    private void innerPut(String query, ImageObjectList val) {
         Node n = lru_cache.get(query);
         if (n == null) {
             n = new Node();
@@ -88,6 +69,24 @@ public class LocalCache {
             n.sizeBytes = n.val.sizeBytes();
         }
         sizeUpdatedFlag();
+    }
+    public synchronized void addToList(String query, ImageObject io) {
+        Node n = lru_cache.get(query);
+        ImageObjectList iol;
+        if (n == null) {
+            LogHandler.m("Entry was evicted. Creating new ImageObjectList");
+            iol = new ImageObjectList(query);
+        } else {
+            iol = n.val;
+        }
+        iol.add(io);
+        innerPut(query, iol);
+    }
+    public synchronized void put(String query, ImageObjectList val) {
+        if (val == null) {
+            throw new IllegalArgumentException("ImageObjectList is null");
+        }
+        innerPut(query, val);
     }
 
     public synchronized void remove(String query) {
