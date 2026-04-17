@@ -3,6 +3,9 @@ package org.example;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URLDecoder;
+import java.util.List;
+
+import org.json.JSONArray;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -17,19 +20,22 @@ public class ServerHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        String response;
         String food;
-        String images;
+        int images;
         try {
             String query = exchange.getRequestURI().getQuery();
             String[] parsed = query.split("&");
             food = URLDecoder.decode(parsed[0].split("=")[1], "UTF-8");
-            images = URLDecoder.decode(parsed[1].split("=")[1], "UTF-8");
+            images = Integer.parseInt(URLDecoder.decode(parsed[1].split("=")[1], "UTF-8"));
         } catch (Exception e) {
             sendInvalidRequestResponse(exchange, "Invalid query.");
             return;
         }
-        response = "Received query: " + food + ", " + images;
+        List<String> res = ImageDeliver.search(food, images);
+        JSONArray ja = new JSONArray(res);
+
+        String response = ja.toString();
+        exchange.getResponseHeaders().set("Content-Type", "application/json");
         exchange.sendResponseHeaders(200, response.length());
         OutputStream os = exchange.getResponseBody();
         os.write(response.getBytes());
