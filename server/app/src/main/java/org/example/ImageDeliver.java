@@ -18,10 +18,14 @@ public class ImageDeliver {
     private static final Cache cache = new Cache();
 
     public static List<String> search(String query, int totalImageCount) {
+        System.out.println("Searching for query: " + query + ", " + totalImageCount);
         Set<String> cached = cache.get(query);
+        System.out.println("Cached size: " + cached.size());
         if (cached.size() < totalImageCount) {
+            System.out.println("Cache miss");
             return queryUnsplash(query, totalImageCount);
         }
+        System.out.println("Cache hit");
         List<String> res = new ArrayList<>();
         int count = 0;
         for (String s : cached) {

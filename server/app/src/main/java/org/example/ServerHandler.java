@@ -12,6 +12,7 @@ import com.sun.net.httpserver.HttpHandler;
 
 public class ServerHandler implements HttpHandler {
     public void sendInvalidRequestResponse(HttpExchange exchange, String response) throws IOException {
+        System.out.println("Sending invalid response");
         exchange.sendResponseHeaders(400, response.length());
         OutputStream os = exchange.getResponseBody();
         os.write(response.getBytes());
@@ -20,14 +21,18 @@ public class ServerHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        System.out.println("Received request");
         String food;
         int images;
         try {
-            String query = exchange.getRequestURI().getQuery();
+            String query = exchange.getRequestURI().getRawQuery();
+            System.out.println("Received query: " + query);
             String[] parsed = query.split("&");
+            // query=BACON,+EGG+&+CHEESE+BISCUIT | per_page=3
             food = URLDecoder.decode(parsed[0].split("=")[1], "UTF-8");
             images = Integer.parseInt(URLDecoder.decode(parsed[1].split("=")[1], "UTF-8"));
         } catch (Exception e) {
+            e.printStackTrace();
             sendInvalidRequestResponse(exchange, "Invalid query.");
             return;
         }
