@@ -130,7 +130,7 @@ public class ImageDeliver {
                 JSONArray res = new JSONArray(response.toString());
                 handleResults(res);
             } catch (Exception e) {
-                listener.onImageError(e);
+                activity.runOnUiThread(() -> listener.onImageError(e));
             }
         }).start();
     }
