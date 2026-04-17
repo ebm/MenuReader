@@ -19,12 +19,7 @@ public class Cache {
         return jd.smembers(query);
     }
 
-    public void put(String query, List<String> urlList) {
-        jd.del(query);
-        jd.sadd(query, urlList.toArray(new String[0]));
-    }
-
-    public void addToList(String query, List<String> urlList) {
+    public void add(String query, List<String> urlList) {
         jd.sadd(query, urlList.toArray(new String[0]));
     }
 

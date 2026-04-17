@@ -24,9 +24,9 @@ public class CacheTest {
     }
 
     @Test
-    public void testPutAndGet() {
+    public void testAddAndGet() {
         List<String> urls = List.of("url1", "url2", "url3");
-        cache.put("test_query", urls);
+        cache.add("test_query", urls);
 
         Set<String> result = cache.get("test_query");
         assertEquals(3, result.size());
@@ -41,7 +41,7 @@ public class CacheTest {
 
     @Test
     public void testRemoveElement() {
-        cache.put("test_query", List.of("url1", "url2", "url3"));
+        cache.add("test_query", List.of("url1", "url2", "url3"));
         cache.removeElement("test_query", "url1");
 
         Set<String> result = cache.get("test_query");
