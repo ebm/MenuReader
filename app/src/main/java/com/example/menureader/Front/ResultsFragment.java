@@ -309,6 +309,7 @@ public class ResultsFragment extends Fragment {
             @Override
             public void onImageError(Exception e) {
                 LogHandler.m("Error loading image", e);
+                dialog.showError();
             }
         });
 

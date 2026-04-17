@@ -25,6 +25,7 @@ public class ImageViewerDialog extends BottomSheetDialogFragment {
     private ViewPager2 viewPager;
     private ProgressBar progressBar;
     private TextView pageIndicator;
+    private TextView errorText;
 
     public static ImageViewerDialog newInstance(String title) {
         ImageViewerDialog dialog = new ImageViewerDialog();
@@ -47,6 +48,7 @@ public class ImageViewerDialog extends BottomSheetDialogFragment {
         viewPager = view.findViewById(R.id.view_pager);
         progressBar = view.findViewById(R.id.progress_bar);
         pageIndicator = view.findViewById(R.id.page_indicator);
+        errorText = view.findViewById(R.id.error_text);
 
         adapter = new ImagePageAdapter(bitmaps);
         viewPager.setAdapter(adapter);
@@ -83,6 +85,12 @@ public class ImageViewerDialog extends BottomSheetDialogFragment {
             adapter.notifyItemInserted(bitmaps.size() - 1);
             showImages();
         }
+    }
+
+    public void showError() {
+        if (progressBar == null) return; // view not created yet; nothing to show
+        progressBar.setVisibility(View.GONE);
+        errorText.setVisibility(View.VISIBLE);
     }
 
     private void showImages() {
