@@ -21,8 +21,7 @@ import java.net.URLEncoder;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ImageDeliver {
-    private final String ACCESS_KEY = BuildConfig.UNSPLASH_KEY;
-    private final String URL_STRING = "https://api.unsplash.com/search/photos?query=";
+    private final String URL_STRING = BuildConfig.URL_STRING;
 
     public interface OnImageResultListener {
         void onImageSuccess(Bitmap bitmap);
@@ -115,9 +114,9 @@ public class ImageDeliver {
         new Thread(() -> {
             try {
                 String encoded = URLEncoder.encode(query, "UTF-8");
-                URL url = new URL(URL_STRING + encoded + "&per_page=" + totalImageCount);
+                URL url = new URL(URL_STRING + "query=" + encoded + "&per_page=" + totalImageCount);
+                LogHandler.m("Final string: " + url.toString());
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestProperty("Authorization", "Client-ID " + ACCESS_KEY);
                 conn.setRequestMethod("GET");
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
@@ -128,9 +127,7 @@ public class ImageDeliver {
                 }
                 reader.close();
 
-                JSONObject json = new JSONObject(response.toString());
-                JSONArray res = json.getJSONArray("results");
-
+                JSONArray res = new JSONArray(response.toString());
                 handleResults(res);
             } catch (Exception e) {
                 listener.onImageError(e);
@@ -144,7 +141,7 @@ public class ImageDeliver {
             iol = new ImageObjectList(query);
             cache.put(query, iol);
             for (int i = 0; i < res.length(); i++) {
-                String imageURL = res.getJSONObject(i).getJSONObject("urls").getString("small");
+                String imageURL = res.getString(i);
                 LogHandler.m("Image " + i + " trying url=" + imageURL);
                 new ImageObject(imageURL, activity, new ImageObject.OnImageObjectSuccess() {
                     @Override

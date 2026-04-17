@@ -22,8 +22,8 @@ android {
         if (localPropertiesFile.exists()) {
             localProperties.load(localPropertiesFile.inputStream())
         }
-        buildConfigField("String", "UNSPLASH_KEY",
-            "\"${localProperties.getProperty("UNSPLASH_KEY", "")}\"")
+        buildConfigField("String", "URL_STRING",
+            "\"${localProperties.getProperty("URL_STRING", "")}\"")
     }
 
     buildTypes {
