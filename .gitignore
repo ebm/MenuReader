@@ -14,3 +14,7 @@
 .cxx
 local.properties
 CLAUDE.md
+server/.env
+server/build
+server/.gradle
+server/app/build

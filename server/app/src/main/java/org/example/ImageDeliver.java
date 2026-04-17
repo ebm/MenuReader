@@ -7,11 +7,10 @@ import java.net.URL;
 import java.net.URLEncoder;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ImageDeliver {
-    private final String ACCESS_KEY = "";
+    private final String ACCESS_KEY = System.getenv("UNSPLASH_KEY");
     private final String URL_STRING = "https://api.unsplash.com/search/photos?query=";
 
     public interface OnQueryResultListener {
