@@ -28,7 +28,6 @@ public class ServerHandler implements HttpHandler {
             String query = exchange.getRequestURI().getRawQuery();
             System.out.println("Received query: " + query);
             String[] parsed = query.split("&");
-            // query=BACON,+EGG+&+CHEESE+BISCUIT | per_page=3
             food = URLDecoder.decode(parsed[0].split("=")[1], "UTF-8");
             images = Integer.parseInt(URLDecoder.decode(parsed[1].split("=")[1], "UTF-8"));
         } catch (Exception e) {
@@ -36,7 +35,16 @@ public class ServerHandler implements HttpHandler {
             sendInvalidRequestResponse(exchange, "Invalid query.");
             return;
         }
-        List<String> res = ImageDeliver.search(food, images);
+        System.out.println("Searching for images...");
+        Cache cache;
+        try {
+            cache = new Cache();
+        } catch (Exception e) {
+            System.out.println("Server not properly initialized.");
+            sendInvalidRequestResponse(exchange, "Server not properly initialized.");
+            return;
+        }
+        List<String> res = ImageDeliver.search(food, images, cache);
         JSONArray ja = new JSONArray(res);
 
         String response = ja.toString();

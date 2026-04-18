@@ -15,15 +15,14 @@ import org.json.JSONObject;
 public class ImageDeliver {
     private static final String ACCESS_KEY = System.getenv("UNSPLASH_KEY");
     private static final String URL_STRING = "https://api.unsplash.com/search/photos?query=";
-    private static final Cache cache = new Cache();
 
-    public static List<String> search(String query, int totalImageCount) {
+    public static List<String> search(String query, int totalImageCount, Cache cache) {
         System.out.println("Searching for query: " + query + ", " + totalImageCount);
         Set<String> cached = cache.get(query);
         System.out.println("Cached size: " + cached.size());
         if (cached.size() < totalImageCount) {
             System.out.println("Cache miss");
-            return queryUnsplash(query, totalImageCount);
+            return queryUnsplash(query, totalImageCount, cache);
         }
         System.out.println("Cache hit");
         List<String> res = new ArrayList<>();
@@ -37,7 +36,7 @@ public class ImageDeliver {
         return res;
     }
 
-    public static List<String> queryUnsplash(String query, int totalImageCount) {
+    public static List<String> queryUnsplash(String query, int totalImageCount, Cache cache) {
         try {
             String encoded = URLEncoder.encode(query, "UTF-8");
             URL url = new URL(URL_STRING + encoded + "&per_page=" + totalImageCount);
