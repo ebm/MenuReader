@@ -54,7 +54,7 @@ public class ImageDeliver {
 
     public boolean cacheFound() {
         iol = cache.get(query);
-        if (iol == null) return false;
+        if (iol == null || iol.size() == 0) return false;
         LogHandler.m("Cache Hit!");
         for (ImageObject io : iol.getImageObjects()) {
             listener.onImageSuccess(io.getBitmap());
@@ -139,7 +139,6 @@ public class ImageDeliver {
         LogHandler.m("Found " + res.length() + " result(s)");
         if (res.length() > 0) {
             iol = new ImageObjectList(query);
-            cache.put(query, iol);
             for (int i = 0; i < res.length(); i++) {
                 String imageURL = res.getString(i);
                 LogHandler.m("Image " + i + " trying url=" + imageURL);
