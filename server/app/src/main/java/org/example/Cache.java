@@ -4,12 +4,14 @@ import java.util.List;
 import java.util.Set;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPooled;
 
 public class Cache {
-    private final Jedis jd;
+    private final JedisPooled jd;
 
     public Cache() {
-        jd = new Jedis("redis://localhost:6379");
+        jd = new JedisPooled("localhost", 6379);
     }
 
     /**
